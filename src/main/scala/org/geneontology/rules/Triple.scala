@@ -2,18 +2,11 @@ package org.geneontology.rules
 
 import scalaz._
 import Scalaz._
+import scala.collection.immutable.Seq
 
-sealed trait Node {
+sealed trait Node
 
-  def matches(node: ConcreteNode): Boolean
-
-}
-
-sealed trait ConcreteNode extends Node {
-
-  def matches(node: ConcreteNode): Boolean = this == node
-
-}
+sealed trait ConcreteNode extends Node
 
 sealed trait Resource extends ConcreteNode
 
@@ -23,11 +16,7 @@ final case class BlankNode(id: String) extends Resource
 
 final case class Literal(lexicalForm: String, datatype: URI, lang: Option[String]) extends ConcreteNode
 
-sealed trait FluidNode extends Node {
-
-  def matches(node: ConcreteNode): Boolean = true
-
-}
+sealed trait FluidNode extends Node
 
 final case class Variable(name: String) extends FluidNode
 
@@ -42,9 +31,6 @@ sealed trait TripleLike {
 }
 
 final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
-
-  def matches(triple: Triple): Boolean =
-    this.s.matches(triple.s) && this.p.matches(triple.p) && this.o.matches(triple.o)
 
   private val subjectGetter: Triple => Node = (triple: Triple) => triple.s
   private val predicateGetter: Triple => Node = (triple: Triple) => triple.p
@@ -63,3 +49,5 @@ final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
 }
 
 final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike
+
+final case class Rule(name: Option[String], body: List[TriplePattern], head: Seq[TriplePattern])

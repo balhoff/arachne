@@ -6,19 +6,12 @@ class RuleEngine(val rules: Iterable[Rule]) {
 
   var workingMemory: Set[Triple] = Set.empty
   private val alphaIndex: Map[TriplePattern, AlphaNode] = processRules(rules)
-  println(alphaIndex.size)
 
   private def processRules(rules: Iterable[Rule]): Map[TriplePattern, AlphaNode] = {
     val alphaIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.Map.empty
     val joinIndex: mutable.Map[JoinNodeSpec, JoinNode] = mutable.Map.empty
     for { rule <- rules } {
       def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode, parentPatterns: List[TriplePattern]): Unit = patterns match {
-        //        case pattern :: Nil if parent == BetaRoot => {
-        //          val blankPattern = blankVariables(pattern)
-        //          val alphaNode = alphaIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
-        //          val pNode = new ProductionNode(rule, alphaNode, this)
-        //          alphaNode.addChild(pNode)
-        //        }
         case pattern :: rest => {
           val blankPattern = blankVariables(pattern)
           val alphaNode = alphaIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
@@ -151,7 +144,7 @@ sealed trait BetaNode extends ReteNode {
 final class JoinNode(var leftParent: BetaNode, rightParent: AlphaNode, val spec: JoinNodeSpec) extends BetaNode {
 
   //var tokens: List[List[Triple]] = Nil
-  var tokens: Set[List[Triple]] = Set.empty
+  var tokens: Set[List[Triple]] = Set.empty //TODO could move back to List
 
   var children: Vector[ReteNode] = Vector.empty
 
@@ -159,11 +152,8 @@ final class JoinNode(var leftParent: BetaNode, rightParent: AlphaNode, val spec:
 
   def addRule(rule: Rule) = rules += rule
 
-  def addChild(node: BetaNode): Unit = {
+  def addChild(node: BetaNode): Unit =
     if (!children.contains(node)) children = node +: children
-
-    // childrenSize += 1
-  }
 
   val tests = spec.tests.tests
 
@@ -172,22 +162,19 @@ final class JoinNode(var leftParent: BetaNode, rightParent: AlphaNode, val spec:
     //    println(this.spec)
     //    rules.foreach(println)
     //search right memory and if find, make token and put in tokens; send token to children
-    if (!tokens(token)) {
-      val newTokens = (for {
-        triple <- rightParent.triples
-        newToken = triple :: token
-        if tests.forall(test => test.map { case (level, field) => field.get(newToken(level)) }.toSet.size == 1)
-      } yield newToken).toSet
-      //    val newTokens = rightParent.triples
-      //      .filter(triple => tests.forall(test => test(token, triple)))
-      //      .map(_ :: token)
+    val newTokens = (for {
+      triple <- rightParent.triples
+      newToken = triple :: token
+      if tests.forall(test => test.map { case (level, field) => field.get(newToken(level)) }.toSet.size == 1)
+    } yield newToken).toSet
+    //    val newTokens = rightParent.triples
+    //      .filter(triple => tests.forall(test => test(token, triple)))
+    //      .map(_ :: token)
 
-      //tokens = newTokens ::: tokens
-      tokens ++= newTokens
-      //println("Activating children: " + children.size)
-      activateChildren(newTokens)
-    } else println("Already seen")
-
+    //tokens = newTokens ::: tokens
+    tokens ++= newTokens
+    //println("Activating children: " + children.size)
+    activateChildren(newTokens)
   }
 
   def rightActivate(triple: Triple): Unit = {
