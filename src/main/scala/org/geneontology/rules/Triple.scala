@@ -42,6 +42,13 @@ final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
     subjectVariable |+| predicateVariable |+| objectVariable
   }
 
+  private def replaceVar(node: Node) = node match {
+    case c: ConcreteNode => c
+    case f: FluidNode    => AnyNode
+  }
+
+  def blankVariables: TriplePattern = TriplePattern(replaceVar(this.s), replaceVar(this.p), replaceVar(this.o))
+
 }
 
 final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike
