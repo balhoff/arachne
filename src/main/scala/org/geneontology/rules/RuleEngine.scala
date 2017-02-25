@@ -9,7 +9,7 @@ class RuleEngine(val rules: Iterable[Rule]) {
 
   private def processRules(rules: Iterable[Rule]): Map[TriplePattern, AlphaNode] = {
     val alphaIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.Map.empty
-    val joinIndex: mutable.Map[JoinNodeSpec, JoinNode] = mutable.Map.empty
+    val joinIndex: mutable.Map[List[TriplePattern], JoinNode] = mutable.Map.empty
     for { rule <- rules } {
       def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode, parentPatterns: List[TriplePattern]): Unit = patterns match {
         case pattern :: rest => {
@@ -25,8 +25,9 @@ class RuleEngine(val rules: Iterable[Rule]) {
           } yield (variable, index, field)).groupBy(_._1).collect {
             case (variable, uses) if uses.size > 1 => uses.map(u => (u._2, u._3)).toSet
           }.toSet
-          val joinSpec = JoinNodeSpec(blankPattern :: parent.spec.patterns, TestSpec(tests))
-          val joinNode = joinIndex.getOrElseUpdate(joinSpec, new JoinNode(parent, alphaNode, joinSpec))
+          //val joinSpec = JoinNodeSpec(blankPattern :: parent.spec.patterns, TestSpec(tests))
+          //val joinNode = joinIndex.getOrElseUpdate(joinSpec, new JoinNode(parent, alphaNode, joinSpec))
+          val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, thisPatternSequence))
           parent.addChild(joinNode)
           alphaNode.addChild(joinNode)
           processRulePatterns(rest, joinNode, thisPatternSequence)
@@ -44,6 +45,8 @@ class RuleEngine(val rules: Iterable[Rule]) {
     } {
       alpha.orderChildren(parentsMap)
     }
+    println(s"Current join nodes: ${joinIndex.valuesIterator.size}")
+    //println(s"Variable join nodes: ${altJoinIndex.valuesIterator.size}")
     alphaIndex.toMap
   }
 
