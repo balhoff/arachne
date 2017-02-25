@@ -3,14 +3,6 @@ package org.geneontology.rules
 import scalaz._
 import Scalaz._
 
-//import scala.collection.mutable
-
-//import scala.collection.Map
-
-//class MyHashMap[A, B](initSize : Int) extends mutable.HashMap[A, B] {
-//  override def initialSize: Int = initSize // 16 - by default
-//}
-
 final class AlphaNode(pattern: TriplePattern) {
 
   var triples: List[Triple] = Nil
@@ -31,9 +23,6 @@ final class AlphaNode(pattern: TriplePattern) {
     tripleIndexS = tripleIndexS |+| Map(triple.s -> Set(triple))
     tripleIndexP = tripleIndexP |+| Map(triple.p -> Set(triple))
     tripleIndexO = tripleIndexO |+| Map(triple.o -> Set(triple))
-    //tripleIndexS = tripleIndexS + (triple.s -> (tripleIndexS.getOrElse(triple.s, Set.empty) + triple))
-    //tripleIndexP = tripleIndexP + (triple.p -> (tripleIndexP.getOrElse(triple.p, Set.empty) + triple))
-    //tripleIndexO = tripleIndexO + (triple.o -> (tripleIndexO.getOrElse(triple.o, Set.empty) + triple))
     children.foreach(_.rightActivate(triple))
   }
 
@@ -67,8 +56,6 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
 
   var tokens: List[Token] = Nil
   var tokenIndex: Map[(Variable, ConcreteNode), Set[Token]] = Map.empty
-  //var tokenIndex: mutable.Map[(Variable, ConcreteNode), Set[Token]] = mutable.Map.empty
-  //var tokenIndex: mutable.Map[(Variable, ConcreteNode), Set[Token]] = new MyHashMap(1024)
 
   var children: List[BetaNode] = Nil
 
@@ -76,40 +63,37 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
     if (!children.contains(node)) children = node :: children
 
   def leftActivate(token: Token): Unit = {
-    //    println("Left activate: " + token)
-    val tokenBoundVariables = token.bindings.keySet
     var valid = true
     var possibleTriples: List[Set[Triple]] = Nil
     if (thisPattern.s.isInstanceOf[Variable]) {
       val v = thisPattern.s.asInstanceOf[Variable]
-      if (tokenBoundVariables(v)) {
+      if (parentBoundVariables(v)) {
         rightParent.tripleIndexS.get(token.bindings(v)) match {
           case Some(triples) => possibleTriples = triples :: possibleTriples
           case None          => valid = false
         }
-      } else rightParent.triples.toSet :: possibleTriples
-
+      }
     }
     if (valid) {
       if (thisPattern.p.isInstanceOf[Variable]) {
         val v = thisPattern.p.asInstanceOf[Variable]
-        if (tokenBoundVariables(v)) {
+        if (parentBoundVariables(v)) {
           rightParent.tripleIndexP.get(token.bindings(v)) match {
             case Some(triples) => possibleTriples = triples :: possibleTriples
             case None          => valid = false
           }
-        } else rightParent.triples.toSet :: possibleTriples
+        }
       }
     }
     if (valid) {
       if (thisPattern.o.isInstanceOf[Variable]) {
         val v = thisPattern.o.asInstanceOf[Variable]
-        if (tokenBoundVariables(v)) {
+        if (parentBoundVariables(v)) {
           rightParent.tripleIndexO.get(token.bindings(v)) match {
             case Some(triples) => possibleTriples = triples :: possibleTriples
             case None          => valid = false
           }
-        } else rightParent.triples.toSet :: possibleTriples
+        }
       }
     }
 
@@ -121,7 +105,11 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
       bindings
     }
     if (valid) {
-      val newTriples = possibleTriples.reduce(_ intersect _)
+      val newTriples = possibleTriples match {
+        case Nil          => rightParent.triples
+        case first :: Nil => possibleTriples.head
+        case _            => possibleTriples.reduce(_ intersect _)
+      }
       var tokensToSend: List[Token] = Nil
       for {
         newTriple <- newTriples
@@ -131,15 +119,14 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
       } {
-        tokenIndex = tokenIndex + (binding -> (tokenIndex.getOrElse(binding, Set.empty) + newToken))
-        //tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
+        //tokenIndex = tokenIndex + (binding -> (tokenIndex.getOrElse(binding, Set.empty) + newToken))
+        tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
       }
       activateChildren(tokensToSend)
     }
   }
 
   def rightActivate(triple: Triple): Unit = {
-    //    println("Right activate: " + this + " " + triple)
     var bindings: Map[Variable, ConcreteNode] = Map.empty
     var valid = true
     if (thisPattern.s.isInstanceOf[Variable]) {
@@ -160,12 +147,10 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         case None       => bindings += ov -> triple.o
       }
     }
-    //    println("Bindings: " + bindings)
     if (valid) {
       var tokensToSend: List[Token] = Nil
       val requiredToMatch = bindings.filterKeys(parentBoundVariables)
       if (requiredToMatch.nonEmpty) {
-        //        println("need to match")
         val goodTokens = requiredToMatch.map(binding => leftParent.tokenIndex.getOrElse(binding, Set.empty)).reduce(_ intersect _)
         for {
           parentToken <- goodTokens
@@ -174,23 +159,19 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
           _ = tokensToSend = newToken :: tokensToSend
           binding <- newToken.bindings
         } {
-          tokenIndex = tokenIndex + (binding -> (tokenIndex.getOrElse(binding, Set.empty) + newToken))
-          //tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
+          //tokenIndex = tokenIndex + (binding -> (tokenIndex.getOrElse(binding, Set.empty) + newToken))
+          tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
         }
       } else {
-        //        println("add to all tokens")
-        //        println("all tokens: " + leftParent.tokens)
         for {
           parentToken <- leftParent.tokens
-          //          _ = println("parent token: " + parentToken)
           newToken = parentToken.extend(bindings, triple)
-          //          _ = println("new token: " + newToken)
           _ = tokens = newToken :: tokens
           _ = tokensToSend = newToken :: tokensToSend
           binding <- newToken.bindings
         } {
-          tokenIndex = tokenIndex + (binding -> (tokenIndex.getOrElse(binding, Set.empty) + newToken))
-          //tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
+          //tokenIndex = tokenIndex + (binding -> (tokenIndex.getOrElse(binding, Set.empty) + newToken))
+          tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
         }
       }
       activateChildren(tokensToSend)
