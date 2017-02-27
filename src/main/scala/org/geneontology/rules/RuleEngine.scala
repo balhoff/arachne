@@ -8,25 +8,15 @@ class RuleEngine(val rules: Iterable[Rule]) {
   private val alphaIndex: Map[TriplePattern, AlphaNode] = processRules(rules)
 
   private def processRules(rules: Iterable[Rule]): Map[TriplePattern, AlphaNode] = {
-    val alphaIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.Map.empty
-    val joinIndex: mutable.Map[JoinNodeSpec, JoinNode] = mutable.Map.empty
+    val alphaNodeIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.Map.empty
+    val joinIndex: mutable.Map[List[TriplePattern], JoinNode] = mutable.Map.empty
     for { rule <- rules } {
       def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode, parentPatterns: List[TriplePattern]): Unit = patterns match {
         case pattern :: rest => {
           val blankPattern = pattern.blankVariables
-          val alphaNode = alphaIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
+          val alphaNode = alphaNodeIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
           val thisPatternSequence = pattern :: parentPatterns
-          val thisPatternVariables = pattern.variables.keySet
-          val tests = (for {
-            (pattern, index) <- thisPatternSequence.zipWithIndex
-            (variable, fields) <- pattern.variables
-            if thisPatternVariables(variable)
-            field <- fields
-          } yield (variable, index, field)).groupBy(_._1).collect {
-            case (variable, uses) if uses.size > 1 => uses.map(u => (u._2, u._3)).toSet
-          }.toSet
-          val joinSpec = JoinNodeSpec(blankPattern :: parent.spec.patterns, TestSpec(tests))
-          val joinNode = joinIndex.getOrElseUpdate(joinSpec, new JoinNode(parent, alphaNode, joinSpec))
+          val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, thisPatternSequence))
           parent.addChild(joinNode)
           alphaNode.addChild(joinNode)
           processRulePatterns(rest, joinNode, thisPatternSequence)
@@ -40,11 +30,11 @@ class RuleEngine(val rules: Iterable[Rule]) {
     }
     val parentsMap = joinIndex.valuesIterator.map(j => j -> parentPath(j)).toMap
     for {
-      alpha <- alphaIndex.valuesIterator
+      alpha <- alphaNodeIndex.valuesIterator
     } {
       alpha.orderChildren(parentsMap)
     }
-    alphaIndex.toMap
+    alphaNodeIndex.toMap
   }
 
   def parentPath(joinNode: JoinNode): Set[JoinNode] = {
@@ -58,13 +48,9 @@ class RuleEngine(val rules: Iterable[Rule]) {
 
   private val DegeneratePattern = TriplePattern(AnyNode, AnyNode, AnyNode)
 
-  var size = 0
-
   def processTriple(triple: Triple) = {
     if (!workingMemory(triple)) {
       workingMemory += triple
-      size += 1
-      if (size % 10000 == 0) println(s"Working memory size: $size")
       val patterns = List(DegeneratePattern,
         TriplePattern(AnyNode, AnyNode, triple.o),
         TriplePattern(AnyNode, triple.p, AnyNode),
