@@ -1,9 +1,5 @@
 package org.geneontology.rules
 
-import scalaz._
-import Scalaz._
-import scala.collection.immutable.Seq
-
 sealed trait Node
 
 sealed trait ConcreteNode extends Node
@@ -32,14 +28,12 @@ sealed trait TripleLike {
 
 final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
 
-  def variables: Map[Variable, Set[TestSpecField]] = {
-    val subjectVariable: Map[Variable, Set[TestSpecField]] =
-      if (this.s.isInstanceOf[Variable]) Map(this.s.asInstanceOf[Variable] -> Set(SubjectField)) else Map.empty
-    val predicateVariable: Map[Variable, Set[TestSpecField]] =
-      if (this.p.isInstanceOf[Variable]) Map(this.p.asInstanceOf[Variable] -> Set(PredicateField)) else Map.empty
-    val objectVariable: Map[Variable, Set[TestSpecField]] =
-      if (this.o.isInstanceOf[Variable]) Map(this.o.asInstanceOf[Variable] -> Set(ObjectField)) else Map.empty
-    subjectVariable |+| predicateVariable |+| objectVariable
+  def variables: Set[Variable] = {
+    var vars: Set[Variable] = Set.empty
+    if (this.s.isInstanceOf[Variable]) vars += this.s.asInstanceOf[Variable]
+    if (this.p.isInstanceOf[Variable]) vars += this.p.asInstanceOf[Variable]
+    if (this.o.isInstanceOf[Variable]) vars += this.o.asInstanceOf[Variable]
+    vars
   }
 
   private def replaceVar(node: Node) = node match {
@@ -53,4 +47,4 @@ final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
 
 final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike
 
-final case class Rule(name: Option[String], body: List[TriplePattern], head: Seq[TriplePattern])
+final case class Rule(name: Option[String], body: List[TriplePattern], head: List[TriplePattern])

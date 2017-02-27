@@ -1,7 +1,7 @@
 package org.geneontology.rules
 
 import scalaz._
-import Scalaz._
+import scalaz.Scalaz._
 
 final class AlphaNode(pattern: TriplePattern) {
 
@@ -52,8 +52,8 @@ case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Triple]) {
 final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec: List[TriplePattern]) extends BetaNode {
 
   private val thisPattern = spec.head
-  private val parentBoundVariables = spec.drop(1).flatMap(_.variables.keys).toSet
-  private val thisPatternVariables = thisPattern.variables.keySet
+  private val parentBoundVariables = spec.drop(1).flatMap(_.variables).toSet
+  private val thisPatternVariables = thisPattern.variables
   private val matchVariables = parentBoundVariables intersect thisPatternVariables
 
   var tokens: List[Token] = Nil
@@ -217,30 +217,3 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
 
 }
 
-case class JoinNodeSpec(patterns: List[TriplePattern], tests: TestSpec)
-
-sealed trait TestSpecField {
-
-  def get(triple: Triple): ConcreteNode
-
-}
-
-case object SubjectField extends TestSpecField {
-
-  def get(triple: Triple): Resource = triple.s
-
-}
-
-case object PredicateField extends TestSpecField {
-
-  def get(triple: Triple): URI = triple.p
-
-}
-
-case object ObjectField extends TestSpecField {
-
-  def get(triple: Triple): ConcreteNode = triple.o
-
-}
-
-case class TestSpec(tests: Set[Set[(Int, TestSpecField)]])
