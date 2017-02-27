@@ -142,28 +142,18 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
     if (checkTriple(triple)) {
       val bindings = makeBindings(triple)
       var tokensToSend: List[Token] = Nil
-      if (matchVariables.nonEmpty) {
+      val goodTokens = if (matchVariables.nonEmpty) {
         val requiredToMatch = bindings.filterKeys(matchVariables)
-        val goodTokens = requiredToMatch.map(binding => leftParent.tokenIndex.getOrElse(binding, Set.empty)).reduce(_ intersect _)
-        for {
-          parentToken <- goodTokens
-          newToken = parentToken.extend(bindings, triple)
-          _ = tokens = newToken :: tokens
-          _ = tokensToSend = newToken :: tokensToSend
-          binding <- newToken.bindings
-        } {
-          tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
-        }
-      } else {
-        for {
-          parentToken <- leftParent.tokens
-          newToken = parentToken.extend(bindings, triple)
-          _ = tokens = newToken :: tokens
-          _ = tokensToSend = newToken :: tokensToSend
-          binding <- newToken.bindings
-        } {
-          tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
-        }
+        requiredToMatch.map(binding => leftParent.tokenIndex.getOrElse(binding, Set.empty)).reduce(_ intersect _)
+      } else leftParent.tokens
+      for {
+        parentToken <- goodTokens
+        newToken = parentToken.extend(bindings, triple)
+        _ = tokens = newToken :: tokens
+        _ = tokensToSend = newToken :: tokensToSend
+        binding <- newToken.bindings
+      } {
+        tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
       }
       activateChildren(tokensToSend)
     }
