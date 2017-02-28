@@ -8,8 +8,8 @@ class RuleEngine(val rules: Iterable[Rule]) {
   private val alphaIndex: Map[TriplePattern, AlphaNode] = processRules(rules)
 
   private def processRules(rules: Iterable[Rule]): Map[TriplePattern, AlphaNode] = {
-    val alphaNodeIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.Map.empty
-    val joinIndex: mutable.Map[List[TriplePattern], JoinNode] = mutable.Map.empty
+    val alphaNodeIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.AnyRefMap.empty
+    val joinIndex: mutable.Map[List[TriplePattern], JoinNode] = mutable.AnyRefMap.empty
     for { rule <- rules } {
       def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode, parentPatterns: List[TriplePattern]): Unit = patterns match {
         case pattern :: rest => {
