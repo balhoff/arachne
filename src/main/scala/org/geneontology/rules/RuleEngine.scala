@@ -1,10 +1,15 @@
 package org.geneontology.rules
 
 import scala.collection.mutable
+import scala.collection.immutable.HashSet
+import scalaz._
+import Scalaz._
 
-class RuleEngine(val rules: Iterable[Rule]) {
+final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean) {
 
-  var workingMemory: Set[Triple] = Set.empty
+  val rules = inputRules.toSet
+  var workingMemory: Set[Triple] = HashSet.empty
+  private var derivations: Map[Triple, List[Derivation]] = Map.empty
   private val alphaIndex: Map[TriplePattern, AlphaNode] = processRules(rules)
 
   private def processRules(rules: Iterable[Rule]): Map[TriplePattern, AlphaNode] = {
@@ -48,22 +53,35 @@ class RuleEngine(val rules: Iterable[Rule]) {
 
   private val DegeneratePattern = TriplePattern(AnyNode, AnyNode, AnyNode)
 
-  def processTriple(triple: Triple) = {
+  def processTriple(triple: Triple): Unit = {
     if (!workingMemory(triple)) {
       workingMemory += triple
-      val patterns = List(DegeneratePattern,
-        TriplePattern(AnyNode, AnyNode, triple.o),
-        TriplePattern(AnyNode, triple.p, AnyNode),
-        TriplePattern(AnyNode, triple.p, triple.o),
-        TriplePattern(triple.s, AnyNode, AnyNode),
-        TriplePattern(triple.s, AnyNode, triple.o),
-        TriplePattern(triple.s, triple.p, AnyNode),
-        TriplePattern(triple.s, triple.p, triple.o))
-      for {
-        pattern <- patterns
-        alphaNode <- alphaIndex.get(pattern)
-      } alphaNode.activate(triple)
+      injectTriple(triple)
     }
+  }
+
+  def processDerivedTriple(triple: Triple, derivation: Derivation) = {
+    if (!workingMemory(triple)) {
+      workingMemory += triple
+      derivations = derivations |+| Map(triple -> List(derivation))
+      injectTriple(triple)
+    }
+
+  }
+
+  private def injectTriple(triple: Triple): Unit = {
+    val patterns = List(DegeneratePattern,
+      TriplePattern(AnyNode, AnyNode, triple.o),
+      TriplePattern(AnyNode, triple.p, AnyNode),
+      TriplePattern(AnyNode, triple.p, triple.o),
+      TriplePattern(triple.s, AnyNode, AnyNode),
+      TriplePattern(triple.s, AnyNode, triple.o),
+      TriplePattern(triple.s, triple.p, AnyNode),
+      TriplePattern(triple.s, triple.p, triple.o))
+    for {
+      pattern <- patterns
+      alphaNode <- alphaIndex.get(pattern)
+    } alphaNode.activate(triple)
   }
 
 }

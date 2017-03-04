@@ -100,7 +100,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
     if (valid) {
       val newTriples = possibleTriples match {
         case Nil          => rightParent.triples
-        case first :: Nil => possibleTriples.head
+        case first :: Nil => first
         case _            => possibleTriples.reduce(_ intersect _)
       }
       var tokensToSend: List[Token] = Nil
@@ -188,10 +188,12 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
       pattern <- rule.head
     } {
       //FIXME get rid of casting
-      engine.processTriple(
-        Triple(produceNode(pattern.s, token).asInstanceOf[Resource],
-          produceNode(pattern.p, token).asInstanceOf[URI],
-          produceNode(pattern.o, token)))
+      val newTriple = Triple(
+        produceNode(pattern.s, token).asInstanceOf[Resource],
+        produceNode(pattern.p, token).asInstanceOf[URI],
+        produceNode(pattern.o, token))
+      if (engine.storeDerivations) engine.processDerivedTriple(newTriple, Derivation(token, rule))
+      else engine.processTriple(newTriple)
     }
   }
 
@@ -207,3 +209,4 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
 
 }
 
+final case class Derivation(token: Token, rule: Rule)
