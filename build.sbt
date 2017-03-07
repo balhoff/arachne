@@ -15,7 +15,7 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 scalacOptions in Test ++= Seq("-Yrangepos")
 
-javaOptions in Test += "-Xmx10G"
+javaOptions += "-Xmx10G"
 
 fork in Test := true
 
