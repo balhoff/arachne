@@ -1,48 +1,52 @@
 package org.geneontology.rules
 
+import scala.collection.mutable
+
 import scalaz._
 import scalaz.Scalaz._
 
-final class AlphaNode(pattern: TriplePattern) {
-
-  var triples: List[Triple] = Nil
-
-  var tripleIndexS: Map[ConcreteNode, Set[Triple]] = Map.empty
-  var tripleIndexP: Map[ConcreteNode, Set[Triple]] = Map.empty
-  var tripleIndexO: Map[ConcreteNode, Set[Triple]] = Map.empty
+final class AlphaNode(val pattern: TriplePattern) {
 
   var children: List[JoinNode] = Nil
+  private val childrenSet: mutable.Set[JoinNode] = mutable.Set.empty
 
-  def addChild(node: JoinNode): Unit = if (!children.contains(node)) children = node :: children
+  def addChild(node: JoinNode): Unit = if (childrenSet.add(node)) children = node :: children
 
   def orderChildren(ancestors: Map[JoinNode, Set[JoinNode]]): Unit =
     children = children.sortWith((a, b) => !ancestors(b)(a))
 
-  def activate(triple: Triple): Unit = {
-    triples = triple :: triples
-    tripleIndexS = tripleIndexS |+| Map(triple.s -> Set(triple))
-    tripleIndexP = tripleIndexP |+| Map(triple.p -> Set(triple))
-    tripleIndexO = tripleIndexO |+| Map(triple.o -> Set(triple))
-    children.foreach(_.rightActivate(triple))
+  def activate(triple: Triple, memory: WorkingMemory): Unit = {
+    val alphaMem = memory.alpha.getOrElseUpdate(pattern, new AlphaMemory(pattern))
+    alphaMem.triples = triple :: alphaMem.triples
+    alphaMem.tripleIndexS = alphaMem.tripleIndexS |+| Map(triple.s -> Set(triple))
+    alphaMem.tripleIndexP = alphaMem.tripleIndexP |+| Map(triple.p -> Set(triple))
+    alphaMem.tripleIndexO = alphaMem.tripleIndexO |+| Map(triple.o -> Set(triple))
+    children.foreach(_.rightActivate(triple, memory))
   }
 
 }
 
 sealed trait BetaNode {
 
-  def tokens: List[Token]
-
-  def tokenIndex: Map[(Variable, ConcreteNode), Set[Token]]
-
   def spec: List[TriplePattern]
 
   def addChild(node: BetaNode): Unit
 
-  def leftActivate(token: Token): Unit
+  def leftActivate(token: Token, memory: WorkingMemory): Unit
 
 }
 
-case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Triple]) {
+final object BetaRoot extends BetaNode {
+
+  def leftActivate(token: Token, memory: WorkingMemory): Unit = ()
+  def addChild(node: BetaNode): Unit = ()
+  val spec: List[TriplePattern] = Nil
+  val memory: BetaMemory = new BetaMemory(spec)
+  memory.tokens = Token(Map.empty, Nil) :: memory.tokens
+
+}
+
+final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Triple]) {
 
   def extend(tripleBindings: Map[Variable, ConcreteNode], triple: Triple): Token =
     Token(bindings ++ tripleBindings, triple :: triples)
@@ -55,21 +59,22 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
   private val parentBoundVariables = spec.drop(1).flatMap(_.variables).toSet
   private val thisPatternVariables = thisPattern.variables
   private val matchVariables = parentBoundVariables intersect thisPatternVariables
+  private val rightParentPattern = rightParent.pattern
 
-  var tokens: List[Token] = Nil
-  var tokenIndex: Map[(Variable, ConcreteNode), Set[Token]] = Map.empty
   var children: List[BetaNode] = Nil
+  private val childrenSet: mutable.Set[BetaNode] = mutable.Set.empty
 
-  def addChild(node: BetaNode): Unit =
-    if (!children.contains(node)) children = node :: children
+  def addChild(node: BetaNode): Unit = if (childrenSet.add(node)) children = node :: children
 
-  def leftActivate(token: Token): Unit = {
+  def leftActivate(token: Token, memory: WorkingMemory): Unit = {
+    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec))
+    val alphaMem = memory.alpha.getOrElseUpdate(rightParentPattern, new AlphaMemory(rightParentPattern))
     var valid = true
     var possibleTriples: List[Set[Triple]] = Nil
     if (thisPattern.s.isInstanceOf[Variable]) {
       val v = thisPattern.s.asInstanceOf[Variable]
       if (parentBoundVariables(v)) {
-        rightParent.tripleIndexS.get(token.bindings(v)) match {
+        alphaMem.tripleIndexS.get(token.bindings(v)) match {
           case Some(triples) => possibleTriples = triples :: possibleTriples
           case None          => valid = false
         }
@@ -79,7 +84,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
       if (thisPattern.p.isInstanceOf[Variable]) {
         val v = thisPattern.p.asInstanceOf[Variable]
         if (parentBoundVariables(v)) {
-          rightParent.tripleIndexP.get(token.bindings(v)) match {
+          alphaMem.tripleIndexP.get(token.bindings(v)) match {
             case Some(triples) => possibleTriples = triples :: possibleTriples
             case None          => valid = false
           }
@@ -90,7 +95,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
       if (thisPattern.o.isInstanceOf[Variable]) {
         val v = thisPattern.o.asInstanceOf[Variable]
         if (parentBoundVariables(v)) {
-          rightParent.tripleIndexO.get(token.bindings(v)) match {
+          alphaMem.tripleIndexO.get(token.bindings(v)) match {
             case Some(triples) => possibleTriples = triples :: possibleTriples
             case None          => valid = false
           }
@@ -99,7 +104,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
     }
     if (valid) {
       val newTriples = possibleTriples match {
-        case Nil          => rightParent.triples
+        case Nil          => alphaMem.triples
         case first :: Nil => first
         case _            => possibleTriples.reduce(_ intersect _)
       }
@@ -108,13 +113,13 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         newTriple <- newTriples
         tripleBindings = makeBindings(newTriple)
         newToken = token.extend(tripleBindings, newTriple)
-        _ = tokens = newToken :: tokens
+        _ = betaMem.tokens = newToken :: betaMem.tokens
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
       } {
-        tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
+        betaMem.tokenIndex = betaMem.tokenIndex |+| Map(binding -> Set(newToken))
       }
-      activateChildren(tokensToSend)
+      activateChildren(tokensToSend, memory)
     }
   }
 
@@ -138,52 +143,41 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
     }
   }
 
-  def rightActivate(triple: Triple): Unit = {
+  def rightActivate(triple: Triple, memory: WorkingMemory): Unit = {
+    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec))
+    val parentMem = memory.beta.getOrElseUpdate(leftParent.spec, new BetaMemory(leftParent.spec))
     if (checkTriple(triple)) {
       val bindings = makeBindings(triple)
       var tokensToSend: List[Token] = Nil
       val goodTokens = if (matchVariables.nonEmpty) {
         val requiredToMatch = bindings.filterKeys(matchVariables)
-        requiredToMatch.map(binding => leftParent.tokenIndex.getOrElse(binding, Set.empty)).reduce(_ intersect _)
-      } else leftParent.tokens
+        requiredToMatch.map(binding => parentMem.tokenIndex.getOrElse(binding, Set.empty)).reduce(_ intersect _)
+      } else parentMem.tokens
       for {
         parentToken <- goodTokens
         newToken = parentToken.extend(bindings, triple)
-        _ = tokens = newToken :: tokens
+        _ = betaMem.tokens = newToken :: betaMem.tokens
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
       } {
-        tokenIndex = tokenIndex |+| Map(binding -> Set(newToken))
+        betaMem.tokenIndex = betaMem.tokenIndex |+| Map(binding -> Set(newToken))
       }
-      activateChildren(tokensToSend)
+      activateChildren(tokensToSend, memory)
     }
   }
 
-  private def activateChildren(newTokens: List[Token]): Unit = {
+  private def activateChildren(newTokens: List[Token], memory: WorkingMemory): Unit = {
     for {
       child <- children
       token <- newTokens
-    } child.leftActivate(token)
+    } child.leftActivate(token, memory)
   }
-
-}
-
-final object BetaRoot extends BetaNode {
-
-  def leftActivate(token: Token): Unit = ()
-  val tokens: List[Token] = List(Token(Map.empty, Nil))
-  val tokenIndex: Map[(Variable, ConcreteNode), Set[Token]] = Map.empty
-  def addChild(node: BetaNode): Unit = ()
-  val spec: List[TriplePattern] = Nil
 
 }
 
 final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) extends BetaNode {
 
-  val tokens: List[Token] = List.empty
-  val tokenIndex: Map[(Variable, ConcreteNode), Set[Token]] = Map.empty
-
-  def leftActivate(token: Token): Unit = {
+  def leftActivate(token: Token, memory: WorkingMemory): Unit = {
     for {
       pattern <- rule.head
     } {
@@ -192,8 +186,8 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
         produceNode(pattern.s, token).asInstanceOf[Resource],
         produceNode(pattern.p, token).asInstanceOf[URI],
         produceNode(pattern.o, token))
-      if (engine.storeDerivations) engine.processDerivedTriple(newTriple, Derivation(token, rule))
-      else engine.processTriple(newTriple)
+      if (engine.storeDerivations) engine.processDerivedTriple(newTriple, Derivation(token, rule), memory)
+      else engine.processTriple(newTriple, memory)
     }
   }
 
@@ -208,5 +202,3 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
   val spec: List[TriplePattern] = Nil
 
 }
-
-final case class Derivation(token: Token, rule: Rule)
