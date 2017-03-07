@@ -1,21 +1,18 @@
 package org.geneontology.rules
 
-import org.apache.jena.rdf.model.ModelFactory
-import org.geneontology.jena.OWLtoRules
-import org.semanticweb.owlapi.apibinding.OWLManager
-import org.semanticweb.owlapi.model.parameters.Imports
 import java.util.Date
-import org.semanticweb.owlapi.model.IRI
+
 import scala.collection.JavaConversions._
+
+import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import com.typesafe.scalalogging.Logger
-import scala.util.Random
-import java.io.FileReader
-import java.io.File
-import org.semanticweb.owlapi.model.AxiomType
 import org.apache.jena.vocabulary.RDF
+import org.geneontology.jena.OWLtoRules
+import org.geneontology.rules.engine._
+import org.geneontology.rules.util.Bridge
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.model.AxiomType
+import org.semanticweb.owlapi.model.parameters.Imports
 
 object TestRun extends App {
 

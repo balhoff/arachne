@@ -1,4 +1,4 @@
-package org.geneontology.rules
+package org.geneontology.rules.engine
 
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap

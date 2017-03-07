@@ -1,15 +1,16 @@
-package org.geneontology.rules
+package org.geneontology.rules.util
 
-import org.apache.jena.reasoner.rulesys.{ Rule => JenaRule }
-import org.apache.jena.reasoner.{ TriplePattern => JenaTriplePattern }
-import org.apache.jena.graph.{ Triple => JenaTriple }
 import org.apache.jena.graph.{ Node => JenaNode }
-import org.apache.jena.reasoner.rulesys.ClauseEntry
 import org.apache.jena.graph.Node_ANY
-import org.apache.jena.graph.Node_Variable
-import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.Node_Blank
 import org.apache.jena.graph.Node_Literal
+import org.apache.jena.graph.Node_URI
+import org.apache.jena.graph.Node_Variable
+import org.apache.jena.graph.{ Triple => JenaTriple }
+import org.apache.jena.reasoner.{ TriplePattern => JenaTriplePattern }
+import org.apache.jena.reasoner.rulesys.ClauseEntry
+import org.apache.jena.reasoner.rulesys.{ Rule => JenaRule }
+import org.geneontology.rules.engine._
 
 object Bridge {
 

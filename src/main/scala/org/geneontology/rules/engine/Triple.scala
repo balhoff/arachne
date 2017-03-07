@@ -1,4 +1,4 @@
-package org.geneontology.rules
+package org.geneontology.rules.engine
 
 sealed trait Node
 
