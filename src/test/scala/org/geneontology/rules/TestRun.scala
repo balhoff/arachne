@@ -13,13 +13,15 @@ import org.geneontology.rules.util.Bridge
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.AxiomType
 import org.semanticweb.owlapi.model.parameters.Imports
+import java.io.FileReader
+import java.io.File
 
 object TestRun extends App {
 
   val dataModel = ModelFactory.createDefaultModel()
   val manager = OWLManager.createOWLOntologyManager()
-  //dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
-  dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
+  dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
+  //dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
   val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
@@ -45,9 +47,9 @@ object TestRun extends App {
   println(new Date())
   val triples = dataModel.listStatements.map(_.asTriple).map(Bridge.tripleFromJena).toVector
   println(s"Starting triples: ${triples.size}")
-  val startTime = new Date().getTime
+  val startTime = System.currentTimeMillis
   val memory = engine.processTriples(triples)
-  val endTime = new Date().getTime
+  val endTime = System.currentTimeMillis
   println(s"Reasoned in: ${endTime - startTime} ms")
   println(new Date())
   println(s"Ending triples: ${memory.facts.size}")
@@ -56,9 +58,9 @@ object TestRun extends App {
   reasoner.setMode(GenericRuleReasoner.FORWARD_RETE)
   val infModel = ModelFactory.createInfModel(reasoner, dataModel)
   println("Jena infer model: " + new Date())
-  val jStartTime = new Date().getTime
+  val jStartTime = System.currentTimeMillis
   infModel.prepare()
-  val jEndTime = new Date().getTime
+  val jEndTime = System.currentTimeMillis
   println(s"Jena reasoned in: ${jEndTime - jStartTime} ms")
   println("Jena inferred model: " + new Date())
   println(s"Jena size: ${infModel.size}")

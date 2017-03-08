@@ -43,8 +43,14 @@ final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
 
   def blankVariables: TriplePattern = TriplePattern(replaceVar(this.s), replaceVar(this.p), replaceVar(this.o))
 
+  override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+
 }
 
-final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike
+final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike {
+
+  override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+
+}
 
 final case class Rule(name: Option[String], body: List[TriplePattern], head: List[TriplePattern])

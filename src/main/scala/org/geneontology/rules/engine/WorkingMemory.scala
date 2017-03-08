@@ -7,8 +7,8 @@ final class WorkingMemory {
 
   var facts: Set[Triple] = Set.empty
   var derivations: Map[Triple, List[Derivation]] = Map.empty
+  
   val alpha: mutable.Map[TriplePattern, AlphaMemory] = AnyRefMap.empty
-
   val beta: mutable.Map[List[TriplePattern], BetaMemory] = AnyRefMap.empty
   beta += (BetaRoot.spec -> BetaRoot.memory)
 
