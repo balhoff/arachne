@@ -3,7 +3,7 @@ organization  := "org.geneontology"
 
 name          := "arachne"
 
-version       := "0.0.2-SNAPSHOT"
+version       := "0.0.2"
 
 publishArtifact in Test := false
 
