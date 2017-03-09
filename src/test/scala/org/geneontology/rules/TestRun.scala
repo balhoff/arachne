@@ -15,6 +15,8 @@ import org.semanticweb.owlapi.model.AxiomType
 import org.semanticweb.owlapi.model.parameters.Imports
 import java.io.FileReader
 import java.io.File
+import org.geneontology.jena.Explanation
+import org.semanticweb.owlapi.model.IRI
 
 object TestRun extends App {
 
@@ -22,8 +24,8 @@ object TestRun extends App {
   val manager = OWLManager.createOWLOntologyManager()
   //dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
   dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
-  val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
-  //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
+  //val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
+  val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   val indirectRules = for {
     axiom <- ontology.getAxioms(AxiomType.SUBCLASS_OF, Imports.INCLUDED)
@@ -38,7 +40,7 @@ object TestRun extends App {
   }
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go.owl"))
   val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true, true)
-  val rules = Bridge.rulesFromJena(jenaRules) ++ indirectRules
+  val rules = Bridge.rulesFromJena(jenaRules) //++ indirectRules
   println(s"Rules: ${rules.size}")
   println("Rule sizes: " + rules.map(_.body.size).toSet)
   println(new Date())
@@ -53,12 +55,14 @@ object TestRun extends App {
   println(s"Reasoned in: ${endTime - startTime} ms")
   println(new Date())
   println(s"Ending triples: ${memory.facts.size}")
-  val oneInferred = (memory.facts -- triples).head
+  val oneInferred = (memory.facts -- triples).drop(1).head
+  val oneInferredJena = dataModel.asStatement(Bridge.jenaFromTriple(oneInferred))
   println(oneInferred)
   println(memory.explain(oneInferred))
 
   val reasoner = new GenericRuleReasoner(jenaRules.toList)
   reasoner.setMode(GenericRuleReasoner.FORWARD_RETE)
+  reasoner.setDerivationLogging(true)
   val infModel = ModelFactory.createInfModel(reasoner, dataModel)
   println("Jena infer model: " + new Date())
   val jStartTime = System.currentTimeMillis
@@ -68,5 +72,11 @@ object TestRun extends App {
   println("Jena inferred model: " + new Date())
   println(s"Jena size: ${infModel.size}")
   println("Rule sizes: " + rules.map(_.body.size).toSet)
+  println(Explanation.explain(oneInferredJena, infModel))
+
+  val test = Triple(URI("http://model.geneontology.org/57c82fad00000639/57c82fad00000654"), URI("http://purl.obolibrary.org/obo/RO_0000056"), URI("http://model.geneontology.org/57c82fad00000639/57c82fad00000653"))
+  println(triples(test))
+  println(dataModel.contains(dataModel.asStatement(Bridge.jenaFromTriple(test))))
+  println(infModel.contains(dataModel.asStatement(Bridge.jenaFromTriple(test))))
 
 }

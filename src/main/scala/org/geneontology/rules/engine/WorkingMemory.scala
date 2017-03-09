@@ -2,10 +2,12 @@ package org.geneontology.rules.engine
 
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
+import scala.collection.immutable.Queue
 
-final class WorkingMemory {
+final class WorkingMemory(var asserted: Set[Triple]) {
 
-  var facts: Set[Triple] = Set.empty
+  var agenda: Queue[Triple] = Queue.empty
+  var facts: Set[Triple] = asserted
   var derivations: Map[Triple, List[Derivation]] = Map.empty
 
   val alpha: mutable.Map[TriplePattern, AlphaMemory] = AnyRefMap.empty

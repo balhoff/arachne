@@ -4,6 +4,7 @@ import scala.collection.mutable
 
 import scalaz._
 import scalaz.Scalaz._
+import scala.collection.immutable.Queue
 
 final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean) {
 
@@ -47,30 +48,33 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
     } else Set.empty
   }
 
-  def processTriples(triples: Iterable[Triple], memory: WorkingMemory): Unit = triples.foreach(t => processTriple(t, memory))
-
   def processTriples(triples: Iterable[Triple]): WorkingMemory = {
-    val memory = new WorkingMemory()
-    processTriples(triples, memory)
+    val memory = new WorkingMemory(triples.toSet)
+    memory.agenda = Queue(triples.toSeq: _*)
+    while (memory.agenda.nonEmpty) {
+      val (triple, rest) = memory.agenda.dequeue
+      memory.agenda = rest
+      injectTriple(triple, memory)
+    }
     memory
   }
 
   private val DegeneratePattern = TriplePattern(AnyNode, AnyNode, AnyNode)
 
-  def processTriple(triple: Triple, memory: WorkingMemory): Unit = {
+  protected[engine] def processTriple(triple: Triple, memory: WorkingMemory): Unit = {
     if (!memory.facts(triple)) {
       memory.facts += triple
-      injectTriple(triple, memory)
+      memory.agenda = memory.agenda.enqueue(triple)
     }
+
   }
 
-  def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory) = {
+  protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory) = {
     if (!memory.facts(triple)) {
       memory.facts += triple
       memory.derivations = memory.derivations |+| Map(triple -> List(derivation))
-      injectTriple(triple, memory)
+      memory.agenda = memory.agenda.enqueue(triple)
     }
-
   }
 
   private def injectTriple(triple: Triple, memory: WorkingMemory): Unit = {
