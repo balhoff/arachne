@@ -20,8 +20,8 @@ object TestRun extends App {
 
   val dataModel = ModelFactory.createDefaultModel()
   val manager = OWLManager.createOWLOntologyManager()
-  dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
-  //dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
+  //dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
+  dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
   val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
@@ -45,7 +45,7 @@ object TestRun extends App {
   val engine = new RuleEngine(rules, true)
   println("Processed rules: ")
   println(new Date())
-  val triples = dataModel.listStatements.map(_.asTriple).map(Bridge.tripleFromJena).toVector
+  val triples = dataModel.listStatements.map(_.asTriple).map(Bridge.tripleFromJena).toSet
   println(s"Starting triples: ${triples.size}")
   val startTime = System.currentTimeMillis
   val memory = engine.processTriples(triples)
@@ -53,6 +53,9 @@ object TestRun extends App {
   println(s"Reasoned in: ${endTime - startTime} ms")
   println(new Date())
   println(s"Ending triples: ${memory.facts.size}")
+  val oneInferred = (memory.facts -- triples).head
+  println(oneInferred)
+  println(memory.explain(oneInferred))
 
   val reasoner = new GenericRuleReasoner(jenaRules.toList)
   reasoner.setMode(GenericRuleReasoner.FORWARD_RETE)
