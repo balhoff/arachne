@@ -11,17 +11,30 @@ import org.apache.jena.reasoner.{ TriplePattern => JenaTriplePattern }
 import org.apache.jena.reasoner.rulesys.ClauseEntry
 import org.apache.jena.reasoner.rulesys.{ Rule => JenaRule }
 import org.geneontology.rules.engine._
+import org.geneontology.rules.engine.Node
+
+import scalaz._
+import scalaz.Scalaz._
 
 object Bridge {
 
-  def ruleFromJena(jenaRule: JenaRule): Rule =
-    Rule(Option(jenaRule.getName), jenaRule.getBody.map(patternFromJena).toList, jenaRule.getHead.map(patternFromJena).toList)
+  def rulesFromJena(jenaRules: Iterable[JenaRule]): Iterable[Rule] = jenaRules.flatMap(ruleFromJena)
 
-  def patternFromJena(clauseEntry: ClauseEntry): TriplePattern = {
-    val pattern = clauseEntry.asInstanceOf[JenaTriplePattern]
-    TriplePattern(nodeFromJena(pattern.getSubject),
-      nodeFromJena(pattern.getPredicate),
-      nodeFromJena(pattern.getObject))
+  def ruleFromJena(jenaRule: JenaRule): Option[Rule] = {
+    for {
+      body <- jenaRule.getBody.map(patternFromJena).toList.sequence
+      head <- jenaRule.getHead.map(patternFromJena).toList.sequence
+    } yield Rule(Option(jenaRule.getName), body, head)
+  }
+
+  def patternFromJena(clauseEntry: ClauseEntry): Option[TriplePattern] = {
+    if (clauseEntry.isInstanceOf[JenaTriplePattern]) {
+      val pattern = clauseEntry.asInstanceOf[JenaTriplePattern]
+      Option(TriplePattern(nodeFromJena(pattern.getSubject),
+        nodeFromJena(pattern.getPredicate),
+        nodeFromJena(pattern.getObject)))
+    } else None
+
   }
 
   def tripleFromJena(triple: JenaTriple): Triple =

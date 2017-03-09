@@ -37,8 +37,8 @@ object TestRun extends App {
       List(TriplePattern(Variable("?x"), URI("http://example.org/indirect_type"), URI(axiom.getSuperClass.asOWLClass.getIRI.toString))))
   }
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go.owl"))
-  val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true)
-  val rules = jenaRules.map(Bridge.ruleFromJena) ++ indirectRules
+  val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true, true)
+  val rules = Bridge.rulesFromJena(jenaRules) ++ indirectRules
   println(s"Rules: ${rules.size}")
   println("Rule sizes: " + rules.map(_.body.size).toSet)
   println(new Date())

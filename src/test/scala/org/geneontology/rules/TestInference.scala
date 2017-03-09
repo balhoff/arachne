@@ -16,8 +16,8 @@ class TestInference extends UnitSpec {
     val manager = OWLManager.createOWLOntologyManager()
     dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
     val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
-    val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true)
-    val rules = jenaRules.map(Bridge.ruleFromJena)
+    val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true, true)
+    val rules = Bridge.rulesFromJena(jenaRules)
     val triples = dataModel.listStatements.map(_.asTriple).map(Bridge.tripleFromJena).toSeq
 
     val engine = new RuleEngine(rules, true)
