@@ -20,22 +20,18 @@ object Bridge {
 
   def rulesFromJena(jenaRules: Iterable[JenaRule]): Iterable[Rule] = jenaRules.flatMap(ruleFromJena)
 
-  def ruleFromJena(jenaRule: JenaRule): Option[Rule] = {
-    for {
-      body <- jenaRule.getBody.map(patternFromJena).toList.sequence
-      head <- jenaRule.getHead.map(patternFromJena).toList.sequence
-    } yield Rule(Option(jenaRule.getName), body, head)
-  }
+  def ruleFromJena(jenaRule: JenaRule): Option[Rule] = for {
+    body <- jenaRule.getBody.map(patternFromJena).toList.sequence
+    head <- jenaRule.getHead.map(patternFromJena).toList.sequence
+  } yield Rule(Option(jenaRule.getName), body, head)
 
-  def patternFromJena(clauseEntry: ClauseEntry): Option[TriplePattern] = {
+  def patternFromJena(clauseEntry: ClauseEntry): Option[TriplePattern] =
     if (clauseEntry.isInstanceOf[JenaTriplePattern]) {
       val pattern = clauseEntry.asInstanceOf[JenaTriplePattern]
       Option(TriplePattern(nodeFromJena(pattern.getSubject),
         nodeFromJena(pattern.getPredicate),
         nodeFromJena(pattern.getObject)))
     } else None
-
-  }
 
   def tripleFromJena(triple: JenaTriple): Triple =
     Triple(nodeFromJena(triple.getSubject).asInstanceOf[Resource],
