@@ -25,21 +25,10 @@ object TestRun extends App {
   //dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
   dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
   //val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
-  val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
-  val indirectRules = for {
-    axiom <- ontology.getAxioms(AxiomType.SUBCLASS_OF, Imports.INCLUDED)
-    if !axiom.getSubClass.isAnonymous
-    if !axiom.getSuperClass.isAnonymous
-  } yield {
-    Rule(None,
-      List(
-        TriplePattern(Variable("?x"), URI(RDF.`type`.getURI), URI(axiom.getSuperClass.asOWLClass.getIRI.toString)),
-        TriplePattern(Variable("?x"), URI(RDF.`type`.getURI), URI(axiom.getSubClass.asOWLClass.getIRI.toString))),
-      List(TriplePattern(Variable("?x"), URI("http://example.org/indirect_type"), URI(axiom.getSuperClass.asOWLClass.getIRI.toString))))
-  }
+  val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go.owl"))
-  val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true, true)
+  val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, false, true) ++ OWLtoRules.indirectRules(ontology)
   val rules = Bridge.rulesFromJena(jenaRules) //++ indirectRules
   println(s"Rules: ${rules.size}")
   println("Rule sizes: " + rules.map(_.body.size).toSet)
@@ -55,6 +44,8 @@ object TestRun extends App {
   println(s"Reasoned in: ${endTime - startTime} ms")
   println(new Date())
   println(s"Ending triples: ${memory.facts.size}")
+  println("Results:::::")
+  memory.facts.filter(_.o == URI("http://purl.obolibrary.org/obo/CHEBI_23367")).foreach(println)
   val oneInferred = (memory.facts -- triples).drop(1).head
   val oneInferredJena = dataModel.asStatement(Bridge.jenaFromTriple(oneInferred))
   println(oneInferred)
