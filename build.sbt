@@ -1,3 +1,4 @@
+enablePlugins(JavaAppPackaging)
 
 organization  := "org.geneontology"
 
@@ -27,6 +28,8 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
 scalacOptions in Test ++= Seq("-Yrangepos")
 
+mainClass in Compile := Some("org.geneontology.rules.cli.Main")
+
 javaOptions += "-Xmx10G"
 
 fork in Test := true
@@ -35,10 +38,12 @@ libraryDependencies ++= {
   Seq(
     "org.scalaz"                  %% "scalaz-core"            % "7.2.1",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.2.0" pomOnly(),
+    "org.geneontology"            %% "owl-to-rules"           % "0.2",
+    "org.backuity.clist"          %% "clist-core"             % "3.2.2",
+    "org.backuity.clist"          %% "clist-macros"           % "3.2.2" % "provided",
     "com.typesafe.scala-logging"  %% "scala-logging"          % "3.4.0",
     "ch.qos.logback"              %  "logback-classic"        % "1.1.7" % Test,
     "org.codehaus.groovy"         %  "groovy-all"             % "2.4.6" % Test,
-    "org.geneontology"            %% "owl-to-rules"           % "0.2"   % Test,
     "org.scalatest"               %% "scalatest"              % "3.0.1" % Test
   )
 }
