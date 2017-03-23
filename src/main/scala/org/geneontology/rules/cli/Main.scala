@@ -9,6 +9,7 @@ import scala.io.Source
 import org.apache.commons.io.FileUtils
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.reasoner.rulesys.Rule
+import org.apache.jena.system.JenaSystem
 import org.backuity.clist._
 import org.geneontology.jena.OWLtoRules
 import org.geneontology.rules.engine.RuleEngine
@@ -22,11 +23,13 @@ object Main extends CliMain[Unit](
   name = "arachne",
   description = "Command-line operations for Arachne RDF rule engine") {
 
+  JenaSystem.init()
+
   var ontOpt = opt[Option[String]](name = "ontology", description = "OWL ontology to import into reasoning rules")
   var rulesOpt = opt[Option[String]](name = "rules", description = "Jena-syntax rules file to import")
-  var exportFile = opt[File](name = "export", description = "export RDF triples to Turtle file")
+  var exportFileOpt = opt[Option[File]](name = "export", description = "export RDF triples to Turtle file")
   var inferredOnly = opt[Boolean](default = false, name = "inferred-only", description = "export inferred triples only")
-  var dataFolder = opt[File](name = "data", description = "folder of RDF data files")
+  var dataFolder = opt[File](name = "data", description = "folder of RDF data files", default = new File("data"))
 
   def run: Unit = {
     val ontIRIOpt = ontOpt.map { ontPath => if (ontPath.startsWith("http")) IRI.create(ontPath) else IRI.create(new File(ontPath)) }
@@ -75,7 +78,7 @@ object Main extends CliMain[Unit](
       val triplesToWrite = if (inferredOnly) memory.facts -- triples else memory.facts
       val outputModel = ModelFactory.createDefaultModel()
       outputModel.add(triplesToWrite.map(Bridge.jenaFromTriple).map(outputModel.asStatement).toSeq.asJava)
-      val triplesOutput = new FileOutputStream(exportFile)
+      val triplesOutput = exportFileOpt.map(new FileOutputStream(_)).getOrElse(System.out)
       outputModel.write(triplesOutput, "ttl")
       triplesOutput.close()
     }
