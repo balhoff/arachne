@@ -4,7 +4,7 @@ organization  := "org.geneontology"
 
 name          := "arachne"
 
-version       := "0.0.3"
+version       := "0.0.4-SNAPSHOT"
 
 publishMavenStyle := true
 
@@ -39,6 +39,7 @@ libraryDependencies ++= {
     "org.scalaz"                  %% "scalaz-core"            % "7.2.1",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.2.0" pomOnly(),
     "org.geneontology"            %% "owl-to-rules"           % "0.2",
+    "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.2.8",
     "org.backuity.clist"          %% "clist-core"             % "3.2.2",
     "org.backuity.clist"          %% "clist-macros"           % "3.2.2" % "provided",
     "com.typesafe.scala-logging"  %% "scala-logging"          % "3.4.0",
