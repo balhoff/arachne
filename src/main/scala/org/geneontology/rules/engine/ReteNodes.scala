@@ -48,6 +48,16 @@ final object BetaRoot extends BetaNode {
 
 final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Triple]) {
 
+  override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+
+  override def equals(that: Any): Boolean =
+    if (this.hashCode == that.hashCode) {
+      if (that.isInstanceOf[Token]) {
+        val thatToken = that.asInstanceOf[Token]
+        this.eq(thatToken) || ((this.bindings == thatToken.bindings) && (this.triples == thatToken.triples))
+      } else false
+    } else false
+
   def extend(tripleBindings: Map[Variable, ConcreteNode], triple: Triple): Token =
     Token(bindings ++ tripleBindings, triple :: triples)
 
@@ -116,9 +126,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         _ = betaMem.tokens = newToken :: betaMem.tokens
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
-      } {
-        betaMem.tokenIndex = betaMem.tokenIndex |+| Map(binding -> Set(newToken))
-      }
+      } betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
       activateChildren(tokensToSend, memory)
     }
   }
@@ -151,7 +159,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
       var tokensToSend: List[Token] = Nil
       val goodTokens = if (matchVariables.nonEmpty) {
         val requiredToMatch = bindings.filterKeys(matchVariables)
-        requiredToMatch.map(binding => parentMem.tokenIndex.getOrElse(binding, Set.empty)).reduce(_ intersect _)
+        requiredToMatch.map(binding => parentMem.tokenIndex.getOrElse(binding, mutable.Set.empty)).reduce(_ intersect _)
       } else parentMem.tokens
       for {
         parentToken <- goodTokens
@@ -159,9 +167,7 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         _ = betaMem.tokens = newToken :: betaMem.tokens
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
-      } {
-        betaMem.tokenIndex = betaMem.tokenIndex |+| Map(binding -> Set(newToken))
-      }
+      } betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
       activateChildren(tokensToSend, memory)
     }
   }

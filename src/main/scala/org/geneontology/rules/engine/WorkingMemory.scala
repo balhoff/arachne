@@ -1,8 +1,8 @@
 package org.geneontology.rules.engine
 
+import scala.collection.immutable.Queue
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
-import scala.collection.immutable.Queue
 
 final class WorkingMemory(var asserted: Set[Triple]) {
 
@@ -57,7 +57,7 @@ final class AlphaMemory(pattern: TriplePattern) {
 final class BetaMemory(val spec: List[TriplePattern]) {
 
   var tokens: List[Token] = Nil
-  var tokenIndex: Map[(Variable, ConcreteNode), Set[Token]] = Map.empty
+  val tokenIndex: mutable.Map[(Variable, ConcreteNode), mutable.Set[Token]] = AnyRefMap.empty
 
 }
 
