@@ -40,6 +40,12 @@ import org.semanticweb.owlapi.reasoner.impl.OWLClassNodeSet
 import org.semanticweb.owlapi.reasoner.impl.OWLNamedIndividualNodeSet
 import org.semanticweb.owlapi.util.Version
 
+/**
+ * An OWLReasoner interface for Arachne. This is not a full-featured OWLReasoner implementation; it is only 
+ * provided to allow Arachne to answer reasoner queries for some limited use cases. Reasoning results are 
+ * dependent on the ruleset used to initialize the ArachneOWLReasonerFactory used to create this reasoner.
+ * The input ontology to this reasoner is translated to RDF data for input to Arachne.
+ */
 class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, arachne: RuleEngine) extends OWLReasoner {
 
   private val IndirectType = "http://arachne.geneontology.org/indirect_type"

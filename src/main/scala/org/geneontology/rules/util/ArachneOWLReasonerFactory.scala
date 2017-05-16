@@ -10,6 +10,10 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner
 import org.semanticweb.owlapi.reasoner.OWLReasonerConfiguration
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory
 
+/**
+ * Creates OWLReasoners which use the given rules (or ontology translated to rules) for materializing
+ * inferred triples from input ontologies. Somewhat hacky and should be used with care.
+ */
 class ArachneOWLReasonerFactory(rules: Set[Rule]) extends OWLReasonerFactory {
 
   val arachne = new RuleEngine(rules, true)
