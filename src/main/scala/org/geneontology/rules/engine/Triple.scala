@@ -6,7 +6,11 @@ sealed trait ConcreteNode extends Node
 
 sealed trait Resource extends ConcreteNode
 
-final case class URI(uri: String) extends Resource
+final case class URI(uri: String) extends Resource {
+
+  override val hashCode: Int = uri.hashCode
+
+}
 
 final case class BlankNode(id: String) extends Resource
 

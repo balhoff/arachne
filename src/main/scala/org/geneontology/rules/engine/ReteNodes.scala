@@ -56,7 +56,7 @@ final object BetaRoot extends BetaNode with BetaParent {
 
 final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Triple]) {
 
-  override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
+  //override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
 
   override def equals(that: Any): Boolean =
     if (this.hashCode == that.hashCode) {
@@ -139,8 +139,14 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
         newToken = token.extend(tripleBindings, newTriple)
         _ = betaMem.tokens = newToken :: betaMem.tokens
         _ = tokensToSend = newToken :: tokensToSend
-        binding <- newToken.bindings
-      } betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
+        (bindingVar, bindingValue) <- newToken.bindings
+      } {
+        //betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
+        //betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty).getOrElseUpdate(bindingValue, mutable.Set.empty).add(newToken)
+        val currentMap = betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty)
+        val currentList = currentMap.getOrElse(bindingValue, Nil)
+        currentMap(bindingValue) = newToken :: currentList
+      }
       activateChildren(tokensToSend, betaMem.linkedChildren, memory)
     }
   }
@@ -184,15 +190,23 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
       var tokensToSend: List[Token] = Nil
       val goodTokens = if (matchVariables.nonEmpty) {
         val requiredToMatch = bindings.filterKeys(matchVariables)
-        requiredToMatch.map(binding => parentMem.tokenIndex.getOrElse(binding, mutable.Set.empty)).reduce(_ intersect _)
+        requiredToMatch.map { case (bindingVar, bindingValue) => parentMem.tokenIndex.getOrElse(bindingVar, mutable.AnyRefMap.empty).getOrElse(bindingValue, Nil) }.reduce(_ intersect _) //TODO can immutable empties be used here
       } else parentMem.tokens
       for {
         parentToken <- goodTokens
         newToken = parentToken.extend(bindings, triple)
         _ = betaMem.tokens = newToken :: betaMem.tokens
         _ = tokensToSend = newToken :: tokensToSend
-        binding <- newToken.bindings
-      } betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
+        (bindingVar, bindingValue) <- newToken.bindings
+      } {
+        //betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
+        val currentMap = betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty)
+        val currentList = currentMap.getOrElse(bindingValue, Nil)
+        currentMap(bindingValue) = newToken :: currentList
+        //.add(newToken)
+        //val set = betaMem.tokenIndex(binding)
+        //if (set.size > 1000000) println(s"Big: $binding")
+      }
       activateChildren(tokensToSend, betaMem.linkedChildren, memory)
     }
   }

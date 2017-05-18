@@ -60,7 +60,8 @@ final class BetaMemory(val spec: List[TriplePattern], initialLinkedChildren: Lis
   var tokens: List[Token] = Nil
   var checkRightLink: Boolean = true
   var checkLeftLink: Boolean = false
-  val tokenIndex: mutable.Map[(Variable, ConcreteNode), mutable.Set[Token]] = AnyRefMap.empty
+  //val tokenIndex: mutable.Map[(Variable, ConcreteNode), mutable.Set[Token]] = AnyRefMap.empty
+  val tokenIndex: mutable.Map[Variable, mutable.Map[ConcreteNode, List[Token]]] = AnyRefMap.empty
   var linkedChildren: List[BetaNode] = initialLinkedChildren
 
 }
