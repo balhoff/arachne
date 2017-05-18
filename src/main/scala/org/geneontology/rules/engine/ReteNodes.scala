@@ -21,7 +21,8 @@ final class AlphaNode(val pattern: TriplePattern) {
     alphaMem.tripleIndexS = alphaMem.tripleIndexS |+| Map(triple.s -> Set(triple))
     alphaMem.tripleIndexP = alphaMem.tripleIndexP |+| Map(triple.p -> Set(triple))
     alphaMem.tripleIndexO = alphaMem.tripleIndexO |+| Map(triple.o -> Set(triple))
-    children.foreach(_.rightActivate(triple, memory))
+    //children.foreach(_.rightActivate(triple, memory))
+    alphaMem.linkedChildren.foreach(_.rightActivate(triple, memory))
   }
 
 }
@@ -36,12 +37,19 @@ sealed trait BetaNode {
 
 }
 
-final object BetaRoot extends BetaNode {
+sealed trait BetaParent {
+
+  def children: List[BetaNode]
+
+}
+
+final object BetaRoot extends BetaNode with BetaParent {
 
   def leftActivate(token: Token, memory: WorkingMemory): Unit = ()
   def addChild(node: BetaNode): Unit = ()
   val spec: List[TriplePattern] = Nil
-  val memory: BetaMemory = new BetaMemory(spec)
+  val memory: BetaMemory = new BetaMemory(spec, Nil)
+  val children = Nil
   memory.tokens = Token(Map.empty, Nil) :: memory.tokens
 
 }
@@ -63,7 +71,7 @@ final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Trip
 
 }
 
-final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec: List[TriplePattern]) extends BetaNode {
+final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: AlphaNode, val spec: List[TriplePattern]) extends BetaNode with BetaParent {
 
   private val thisPattern = spec.head
   private val parentBoundVariables = spec.drop(1).flatMap(_.variables).toSet
@@ -77,8 +85,14 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
   def addChild(node: BetaNode): Unit = if (childrenSet.add(node)) children = node :: children
 
   def leftActivate(token: Token, memory: WorkingMemory): Unit = {
-    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec))
     val alphaMem = memory.alpha.getOrElseUpdate(rightParentPattern, new AlphaMemory(rightParentPattern))
+    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec, children))
+    if (betaMem.checkRightLink) linkToAlpha(memory)
+    if (alphaMem.triples.isEmpty) { // left-unlink
+      val parentMem = memory.beta(leftParent.spec)
+      parentMem.linkedChildren = parentMem.linkedChildren.filterNot(_ == this)
+      betaMem.checkLeftLink = true
+    }
     var valid = true
     var possibleTriples: List[Set[Triple]] = Nil
     if (thisPattern.s.isInstanceOf[Variable]) {
@@ -127,8 +141,15 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
       } betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
-      activateChildren(tokensToSend, memory)
+      activateChildren(tokensToSend, betaMem.linkedChildren, memory)
     }
+  }
+
+  def linkToAlpha(memory: WorkingMemory): Unit = {
+    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec, children))
+    val alphaMem = memory.alpha.getOrElseUpdate(rightParentPattern, new AlphaMemory(rightParentPattern))
+    betaMem.checkRightLink = false
+    alphaMem.linkedChildren = this :: alphaMem.linkedChildren
   }
 
   private val checkTriple: Triple => Boolean = thisPattern match {
@@ -152,8 +173,12 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
   }
 
   def rightActivate(triple: Triple, memory: WorkingMemory): Unit = {
-    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec))
-    val parentMem = memory.beta.getOrElseUpdate(leftParent.spec, new BetaMemory(leftParent.spec))
+    val betaMem = memory.beta.getOrElseUpdate(spec, new BetaMemory(spec, children))
+    val parentMem = memory.beta.getOrElseUpdate(leftParent.spec, new BetaMemory(leftParent.spec, leftParent.children))
+    if (betaMem.checkLeftLink) {
+      parentMem.linkedChildren = this :: parentMem.linkedChildren
+      betaMem.checkLeftLink = false
+    }
     if (checkTriple(triple)) {
       val bindings = makeBindings(triple)
       var tokensToSend: List[Token] = Nil
@@ -168,13 +193,13 @@ final class JoinNode(val leftParent: BetaNode, rightParent: AlphaNode, val spec:
         _ = tokensToSend = newToken :: tokensToSend
         binding <- newToken.bindings
       } betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
-      activateChildren(tokensToSend, memory)
+      activateChildren(tokensToSend, betaMem.linkedChildren, memory)
     }
   }
 
-  private def activateChildren(newTokens: List[Token], memory: WorkingMemory): Unit = {
+  private def activateChildren(newTokens: List[Token], linkedChildren: List[BetaNode], memory: WorkingMemory): Unit = {
     for {
-      child <- children
+      child <- linkedChildren
       token <- newTokens
     } child.leftActivate(token, memory)
   }

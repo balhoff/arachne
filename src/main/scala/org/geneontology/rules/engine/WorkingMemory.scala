@@ -51,13 +51,17 @@ final class AlphaMemory(pattern: TriplePattern) {
   var tripleIndexS: Map[ConcreteNode, Set[Triple]] = Map.empty
   var tripleIndexP: Map[ConcreteNode, Set[Triple]] = Map.empty
   var tripleIndexO: Map[ConcreteNode, Set[Triple]] = Map.empty
+  var linkedChildren: List[JoinNode] = Nil
 
 }
 
-final class BetaMemory(val spec: List[TriplePattern]) {
+final class BetaMemory(val spec: List[TriplePattern], initialLinkedChildren: List[BetaNode]) {
 
   var tokens: List[Token] = Nil
+  var checkRightLink: Boolean = true
+  var checkLeftLink: Boolean = false
   val tokenIndex: mutable.Map[(Variable, ConcreteNode), mutable.Set[Token]] = AnyRefMap.empty
+  var linkedChildren: List[BetaNode] = initialLinkedChildren
 
 }
 
