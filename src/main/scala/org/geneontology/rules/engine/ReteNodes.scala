@@ -211,12 +211,10 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
     }
   }
 
-  private def activateChildren(newTokens: List[Token], linkedChildren: List[BetaNode], memory: WorkingMemory): Unit = {
-    for {
-      child <- linkedChildren
-      token <- newTokens
-    } child.leftActivate(token, memory)
-  }
+  private def activateChildren(newTokens: List[Token], linkedChildren: List[BetaNode], memory: WorkingMemory): Unit = for {
+    child <- linkedChildren
+    token <- newTokens
+  } child.leftActivate(token, memory)
 
 }
 

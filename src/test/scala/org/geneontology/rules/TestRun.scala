@@ -22,18 +22,23 @@ object TestRun extends App {
 
   val dataModel = ModelFactory.createDefaultModel()
   val manager = OWLManager.createOWLOntologyManager()
-  //dataModel.read(new FileReader(new File("/Users/jbalhoff/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
-  dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
+  dataModel.read(new FileReader(new File("/Users/jim/Documents/Eclipse/rdfox-cli/fb-lego.ttl")), "", "ttl")
+  //dataModel.read(this.getClass.getResourceAsStream("57c82fad00000639.ttl"), "", "ttl")
   //val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
+  val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("go-lego-merged.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
-  val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go/extensions/go-lego.owl"))
   //val ontology = manager.loadOntology(IRI.create("http://purl.obolibrary.org/obo/go.owl"))
   val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, false, true) ++ OWLtoRules.indirectRules(ontology)
-  val rules = Bridge.rulesFromJena(jenaRules) //++ indirectRules
+  val rules = Bridge.rulesFromJena(jenaRules)//.filter(_.body.size == 5).drop(631) //++ indirectRules
+  println(rules.head)
+  //rules.foreach(println)
   println(s"Rules: ${rules.size}")
-  println("Rule sizes: " + rules.map(_.body.size).toSet)
+  println("Rule sizes: " + rules.groupBy(_.body.size).map {
+    case (size, grouped) =>
+      size -> grouped.size
+  })
   println(new Date())
-  val engine = new RuleEngine(rules, true)
+  val engine = new RuleEngine(rules, false)
   println("Processed rules: ")
   println(new Date())
   val triples = dataModel.listStatements.map(_.asTriple).map(Bridge.tripleFromJena).toSet
