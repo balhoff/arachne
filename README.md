@@ -2,7 +2,7 @@
 
 # Arachne
 
-Arachne is a rule engine for RDF. The implementation is largely based on [Forgy's](http://dx.doi.org/10.1016/0004-3702%2882%2990020-0) Rete algorithm as described in [Production Matching for Large Learning Systems](http://reports-archive.adm.cs.cmu.edu/anon/1995/CMU-CS-95-113.pdf) by Robert B. Doorenbos.
+Arachne is a rule engine for RDF. It implements the Rete/UL algorithm as described in [Production Matching for Large Learning Systems](http://reports-archive.adm.cs.cmu.edu/anon/1995/CMU-CS-95-113.pdf) by Robert B. Doorenbos, an extension of [Forgy's](http://dx.doi.org/10.1016/0004-3702%2882%2990020-0) original Rete algorithm.
 
 ### Goals
 Arachne was developed initially to support reasoning within the [Noctua/Minerva](https://github.com/geneontology/noctua) system. This use case calls for:
