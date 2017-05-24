@@ -6,7 +6,7 @@ appender("SystemErr", ConsoleAppender) {
 }
 
 appender("FILE", FileAppender) {
-    file = "rule-engine.log"
+    file = "arachne.log"
     append = true
     encoder(PatternLayoutEncoder) {
         pattern = "%d %level %logger - %msg%n"
@@ -14,3 +14,5 @@ appender("FILE", FileAppender) {
 }
 
 root(INFO, ["SystemErr", "FILE"])
+
+logger("org.semanticweb.owlapi", ERROR)
