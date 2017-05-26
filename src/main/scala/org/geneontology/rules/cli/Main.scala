@@ -62,6 +62,7 @@ object Main extends CliMain[Unit](
       val datafiles = FileUtils.listFiles(dataFolder, null, true).asScala
         .filterNot(_.getName == "catalog-v001.xml")
         .filterNot(_.isHidden())
+        .filter(_.getName.endsWith(".ttl"))
         .filter(_.isFile).toArray
       val dataModel = ModelFactory.createDefaultModel()
       for {
