@@ -29,7 +29,7 @@ object Main extends CliMain[Unit](
   var rulesOpt = opt[Option[String]](name = "rules", description = "Jena-syntax rules file to import")
   var exportFileOpt = opt[Option[File]](name = "export", description = "export RDF triples to Turtle file")
   var inferredOnly = opt[Boolean](default = false, name = "inferred-only", description = "export inferred triples only")
-  var dataFolder = opt[File](name = "data", description = "folder of RDF data files", default = new File("data"))
+  var dataFileOrFolder = opt[File](name = "data", description = "file or folder of RDF data files", default = new File("data"))
 
   def run: Unit = {
     val ontIRIOpt = ontOpt.map { ontPath => if (ontPath.startsWith("http")) IRI.create(ontPath) else IRI.create(new File(ontPath)) }
@@ -59,9 +59,10 @@ object Main extends CliMain[Unit](
     }
 
     val triples: Set[Triple] = time("Imported data files") {
-      val datafiles = FileUtils.listFiles(dataFolder, null, true).asScala
+      val datafiles = if (dataFileOrFolder.isFile) Array(dataFileOrFolder)
+      else FileUtils.listFiles(dataFileOrFolder, null, true).asScala
         .filterNot(_.getName == "catalog-v001.xml")
-        .filterNot(_.isHidden())
+        .filterNot(_.isHidden)
         .filter(_.isFile).toArray
       val dataModel = ModelFactory.createDefaultModel()
       for {
