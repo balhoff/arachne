@@ -30,6 +30,7 @@ object Main extends CliMain[Unit](
   var exportFileOpt = opt[Option[File]](name = "export", description = "export RDF triples to Turtle file")
   var inferredOnly = opt[Boolean](default = false, name = "inferred-only", description = "export inferred triples only")
   var dataFileOrFolder = opt[File](name = "data", description = "file or folder of RDF data files", default = new File("data"))
+  var indirectTypes = opt[Boolean](name = "indirect-types", description = "mark indirect types with additional triple", default = false)
 
   def run: Unit = {
     val ontIRIOpt = ontOpt.map { ontPath => if (ontPath.startsWith("http")) IRI.create(ontPath) else IRI.create(new File(ontPath)) }
@@ -42,7 +43,8 @@ object Main extends CliMain[Unit](
 
       time("Imported ontology into rules") {
         val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, false, true)
-        Bridge.rulesFromJena(jenaRules)
+        val indirectRules = if (indirectTypes) OWLtoRules.indirectRules(ontology) else Set.empty
+        Bridge.rulesFromJena(jenaRules ++ indirectRules)
       }
     }
 
