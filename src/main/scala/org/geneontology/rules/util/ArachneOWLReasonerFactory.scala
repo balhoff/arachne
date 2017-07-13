@@ -14,9 +14,9 @@ import org.semanticweb.owlapi.reasoner.OWLReasonerFactory
  * Creates OWLReasoners which use the given rules (or ontology translated to rules) for materializing
  * inferred triples from input ontologies. Somewhat hacky and should be used with care.
  */
-class ArachneOWLReasonerFactory(rules: Set[Rule]) extends OWLReasonerFactory {
+class ArachneOWLReasonerFactory(val arachne: RuleEngine) extends OWLReasonerFactory {
 
-  val arachne = new RuleEngine(rules, true)
+  def this(rules: Set[Rule]) = this(new RuleEngine(rules, true))
 
   def this(ontology: OWLOntology) = this(Bridge.rulesFromJena(OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true, true)).toSet ++
     Bridge.rulesFromJena(OWLtoRules.indirectRules(ontology)))
