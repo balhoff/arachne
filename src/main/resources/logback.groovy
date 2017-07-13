@@ -16,3 +16,5 @@ appender("FILE", FileAppender) {
 root(INFO, ["SystemErr", "FILE"])
 
 logger("org.semanticweb.owlapi", ERROR)
+
+logger("uk.ac.manchester.cs.owl.owlapi", ERROR)
