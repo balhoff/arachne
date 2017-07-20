@@ -4,7 +4,7 @@ organization  := "org.geneontology"
 
 name          := "arachne"
 
-version       := "1.1"
+version       := "1.1.1"
 
 publishMavenStyle := true
 
@@ -22,7 +22,9 @@ licenses := Seq("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Cla
 
 homepage := Some(url("https://github.com/balhoff/arachne"))
 
-scalaVersion  := "2.11.11"
+scalaVersion  := "2.12.2"
+
+crossScalaVersions := Seq("2.11.11", "2.12.2")
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -36,14 +38,14 @@ fork in Test := true
 
 libraryDependencies ++= {
   Seq(
-    "org.scalaz"                  %% "scalaz-core"            % "7.2.1",
+    "org.scalaz"                  %% "scalaz-core"            % "7.2.14",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.2.0" pomOnly(),
-    "org.geneontology"            %% "owl-to-rules"           % "0.3.3",
+    "org.geneontology"            %% "owl-to-rules"           % "0.3.4",
     "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.2.8",
     "org.backuity.clist"          %% "clist-core"             % "3.2.2",
     "org.backuity.clist"          %% "clist-macros"           % "3.2.2" % "provided",
-    "com.typesafe.scala-logging"  %% "scala-logging"          % "3.4.0",
-    "ch.qos.logback"              %  "logback-classic"        % "1.1.7",
+    "com.typesafe.scala-logging"  %% "scala-logging"          % "3.7.1",
+    "ch.qos.logback"              %  "logback-classic"        % "1.2.3",
     "org.codehaus.groovy"         %  "groovy-all"             % "2.4.6",
     "org.scalatest"               %% "scalatest"              % "3.0.1" % Test
   )
