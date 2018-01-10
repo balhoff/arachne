@@ -220,7 +220,6 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
     for {
       pattern <- rule.head
     } {
-      //FIXME get rid of casting
       val newTriple = Triple(
         produceNode(pattern.s, token).asInstanceOf[Resource],
         produceNode(pattern.p, token).asInstanceOf[URI],
@@ -233,7 +232,7 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
   private def produceNode(node: Node, token: Token): ConcreteNode = node match {
     case c: ConcreteNode => c
     case v: Variable     => token.bindings(v)
-    //case AnyNode => error
+    case AnyNode         => throw new RuntimeException("Invalid rule head containing AnyNode")
   }
 
   def addChild(node: BetaNode): Unit = ()

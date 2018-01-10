@@ -4,7 +4,7 @@ import scala.collection.immutable.Queue
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 
-final class WorkingMemory(var asserted: Set[Triple]) {
+final class WorkingMemory(val asserted: Set[Triple]) {
 
   var agenda: Queue[Triple] = Queue.empty
   val facts: mutable.Set[Triple] = mutable.Set.empty ++ asserted
@@ -60,7 +60,6 @@ final class BetaMemory(val spec: JoinNodeSpec, initialLinkedChildren: List[BetaN
   var tokens: List[Token] = Nil
   var checkRightLink: Boolean = true
   var checkLeftLink: Boolean = false
-  //val tokenIndex: mutable.Map[(Variable, ConcreteNode), mutable.Set[Token]] = AnyRefMap.empty
   val tokenIndex: mutable.Map[Variable, mutable.Map[ConcreteNode, List[Token]]] = AnyRefMap.empty
   var linkedChildren: List[BetaNode] = initialLinkedChildren
 
