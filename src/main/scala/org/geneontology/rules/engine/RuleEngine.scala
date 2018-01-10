@@ -65,17 +65,13 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
   private val DegeneratePattern = TriplePattern(AnyNode, AnyNode, AnyNode)
 
   protected[engine] def processTriple(triple: Triple, memory: WorkingMemory): Unit = {
-    if (!memory.facts(triple)) {
-      memory.facts += triple
+    if (memory.facts.add(triple)) {
       memory.agenda = memory.agenda.enqueue(triple)
     }
-
   }
 
   protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory) = {
     if (memory.facts.add(triple)) {
-      //if (memory.facts.size % 100000 == 0) println(memory.facts.size)
-      //memory.derivations = memory.derivations |+| Map(triple -> List(derivation))
       memory.derivations += triple -> (derivation :: memory.derivations.getOrElse(triple, Nil))
       memory.agenda = memory.agenda.enqueue(triple)
     }
