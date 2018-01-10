@@ -73,16 +73,17 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
   }
 
   protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory) = {
-    if (!memory.facts(triple)) {
-      memory.facts += triple
+    if (memory.facts.add(triple)) {
       //if (memory.facts.size % 100000 == 0) println(memory.facts.size)
-      memory.derivations = memory.derivations |+| Map(triple -> List(derivation))
+      //memory.derivations = memory.derivations |+| Map(triple -> List(derivation))
+      memory.derivations += triple -> (derivation :: memory.derivations.getOrElse(triple, Nil))
       memory.agenda = memory.agenda.enqueue(triple)
     }
   }
 
   private def injectTriple(triple: Triple, memory: WorkingMemory): Unit = {
-    val patterns = List(DegeneratePattern,
+    val patterns = List(
+      DegeneratePattern,
       TriplePattern(AnyNode, AnyNode, triple.o),
       TriplePattern(AnyNode, triple.p, AnyNode),
       TriplePattern(AnyNode, triple.p, triple.o),

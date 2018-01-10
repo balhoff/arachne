@@ -7,7 +7,7 @@ import scala.collection.mutable.AnyRefMap
 final class WorkingMemory(var asserted: Set[Triple]) {
 
   var agenda: Queue[Triple] = Queue.empty
-  var facts: Set[Triple] = asserted
+  val facts: mutable.Set[Triple] = mutable.Set.empty ++ asserted
   var derivations: Map[Triple, List[Derivation]] = Map.empty
 
   val alpha: mutable.Map[TriplePattern, AlphaMemory] = AnyRefMap.empty
@@ -48,9 +48,9 @@ final class WorkingMemory(var asserted: Set[Triple]) {
 final class AlphaMemory(pattern: TriplePattern) {
 
   var triples: List[Triple] = Nil
-  var tripleIndexS: Map[ConcreteNode, Set[Triple]] = Map.empty
-  var tripleIndexP: Map[ConcreteNode, Set[Triple]] = Map.empty
-  var tripleIndexO: Map[ConcreteNode, Set[Triple]] = Map.empty
+  var tripleIndexS: Map[ConcreteNode, List[Triple]] = Map.empty
+  var tripleIndexP: Map[ConcreteNode, List[Triple]] = Map.empty
+  var tripleIndexO: Map[ConcreteNode, List[Triple]] = Map.empty
   var linkedChildren: List[JoinNode] = Nil
 
 }

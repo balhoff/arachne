@@ -2,9 +2,6 @@ package org.geneontology.rules.engine
 
 import scala.collection.mutable
 
-import scalaz._
-import scalaz.Scalaz._
-
 final class AlphaNode(val pattern: TriplePattern) {
 
   var children: List[JoinNode] = Nil
@@ -18,10 +15,9 @@ final class AlphaNode(val pattern: TriplePattern) {
   def activate(triple: Triple, memory: WorkingMemory): Unit = {
     val alphaMem = memory.alpha.getOrElseUpdate(pattern, new AlphaMemory(pattern))
     alphaMem.triples = triple :: alphaMem.triples
-    alphaMem.tripleIndexS = alphaMem.tripleIndexS |+| Map(triple.s -> Set(triple))
-    alphaMem.tripleIndexP = alphaMem.tripleIndexP |+| Map(triple.p -> Set(triple))
-    alphaMem.tripleIndexO = alphaMem.tripleIndexO |+| Map(triple.o -> Set(triple))
-    //children.foreach(_.rightActivate(triple, memory))
+    alphaMem.tripleIndexS += triple.s -> (triple :: alphaMem.tripleIndexS.getOrElse(triple.s, Nil))
+    alphaMem.tripleIndexP += triple.p -> (triple :: alphaMem.tripleIndexP.getOrElse(triple.p, Nil))
+    alphaMem.tripleIndexO += triple.o -> (triple :: alphaMem.tripleIndexO.getOrElse(triple.o, Nil))
     alphaMem.linkedChildren.foreach(_.rightActivate(triple, memory))
   }
 
@@ -94,7 +90,7 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
       betaMem.checkLeftLink = true
     }
     var valid = true
-    var possibleTriples: List[Set[Triple]] = Nil
+    var possibleTriples: List[List[Triple]] = Nil
     if (thisPattern.s.isInstanceOf[Variable]) {
       val v = thisPattern.s.asInstanceOf[Variable]
       if (parentBoundVariables(v)) {
