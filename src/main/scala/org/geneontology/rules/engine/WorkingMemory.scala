@@ -11,7 +11,7 @@ final class WorkingMemory(var asserted: Set[Triple]) {
   var derivations: Map[Triple, List[Derivation]] = Map.empty
 
   val alpha: mutable.Map[TriplePattern, AlphaMemory] = AnyRefMap.empty
-  val beta: mutable.Map[List[TriplePattern], BetaMemory] = AnyRefMap.empty
+  val beta: mutable.Map[JoinNodeSpec, BetaMemory] = AnyRefMap.empty
   beta += (BetaRoot.spec -> BetaRoot.memory)
 
   def explain(triple: Triple): Set[Explanation] = explainAll(Set(triple))
@@ -55,7 +55,7 @@ final class AlphaMemory(pattern: TriplePattern) {
 
 }
 
-final class BetaMemory(val spec: List[TriplePattern], initialLinkedChildren: List[BetaNode]) {
+final class BetaMemory(val spec: JoinNodeSpec, initialLinkedChildren: List[BetaNode]) {
 
   var tokens: List[Token] = Nil
   var checkRightLink: Boolean = true

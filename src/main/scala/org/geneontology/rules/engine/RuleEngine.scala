@@ -20,7 +20,7 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
         val blankPattern = pattern.blankVariables
         val alphaNode = alphaNodeIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
         val thisPatternSequence = pattern :: parentPatterns
-        val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, thisPatternSequence))
+        val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, JoinNodeSpec(thisPatternSequence)))
         parent.addChild(joinNode)
         alphaNode.addChild(joinNode)
         if (parent == BetaRoot) topJoinNodes += joinNode

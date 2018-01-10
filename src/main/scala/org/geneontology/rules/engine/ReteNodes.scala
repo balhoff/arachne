@@ -25,7 +25,7 @@ final class AlphaNode(val pattern: TriplePattern) {
 
 sealed trait BetaNode {
 
-  def spec: List[TriplePattern]
+  def spec: JoinNodeSpec
 
   def addChild(node: BetaNode): Unit
 
@@ -43,7 +43,7 @@ final object BetaRoot extends BetaNode with BetaParent {
 
   def leftActivate(token: Token, memory: WorkingMemory): Unit = ()
   def addChild(node: BetaNode): Unit = ()
-  val spec: List[TriplePattern] = Nil
+  val spec: JoinNodeSpec = JoinNodeSpec(Nil)
   val memory: BetaMemory = new BetaMemory(spec, Nil)
   val children = Nil
   memory.tokens = Token(Map.empty, Nil) :: memory.tokens
@@ -67,10 +67,10 @@ final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Trip
 
 }
 
-final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: AlphaNode, val spec: List[TriplePattern]) extends BetaNode with BetaParent {
+final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: AlphaNode, val spec: JoinNodeSpec) extends BetaNode with BetaParent {
 
-  private val thisPattern = spec.head
-  private val parentBoundVariables = spec.drop(1).flatMap(_.variables).toSet
+  private val thisPattern = spec.pattern.head
+  private val parentBoundVariables = spec.pattern.drop(1).flatMap(_.variables).toSet
   private val thisPatternVariables = thisPattern.variables
   private val matchVariables = parentBoundVariables intersect thisPatternVariables
   private val rightParentPattern = rightParent.pattern
@@ -238,6 +238,12 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
 
   def addChild(node: BetaNode): Unit = ()
 
-  val spec: List[TriplePattern] = Nil
+  val spec: JoinNodeSpec = JoinNodeSpec(Nil)
+
+}
+
+final case class JoinNodeSpec(pattern: List[TriplePattern]) {
+
+  override val hashCode: Int = pattern.hashCode
 
 }
