@@ -4,7 +4,7 @@ organization  := "org.geneontology"
 
 name          := "arachne"
 
-version       := "1.1.1"
+version       := "1.2"
 
 publishMavenStyle := true
 
