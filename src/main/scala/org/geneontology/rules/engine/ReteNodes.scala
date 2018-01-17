@@ -137,8 +137,6 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
         _ = tokensToSend = newToken :: tokensToSend
         (bindingVar, bindingValue) <- newToken.bindings
       } {
-        //betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
-        //betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty).getOrElseUpdate(bindingValue, mutable.Set.empty).add(newToken)
         val currentMap = betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty)
         val currentList = currentMap.getOrElse(bindingValue, Nil)
         currentMap(bindingValue) = newToken :: currentList
