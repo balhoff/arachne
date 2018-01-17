@@ -2,9 +2,6 @@ package org.geneontology.rules.engine
 
 import scala.collection.mutable
 
-import scalaz._
-import scalaz.Scalaz._
-
 final class AlphaNode(val pattern: TriplePattern) {
 
   var children: List[JoinNode] = Nil
@@ -18,10 +15,9 @@ final class AlphaNode(val pattern: TriplePattern) {
   def activate(triple: Triple, memory: WorkingMemory): Unit = {
     val alphaMem = memory.alpha.getOrElseUpdate(pattern, new AlphaMemory(pattern))
     alphaMem.triples = triple :: alphaMem.triples
-    alphaMem.tripleIndexS = alphaMem.tripleIndexS |+| Map(triple.s -> Set(triple))
-    alphaMem.tripleIndexP = alphaMem.tripleIndexP |+| Map(triple.p -> Set(triple))
-    alphaMem.tripleIndexO = alphaMem.tripleIndexO |+| Map(triple.o -> Set(triple))
-    //children.foreach(_.rightActivate(triple, memory))
+    alphaMem.tripleIndexS += triple.s -> (triple :: alphaMem.tripleIndexS.getOrElse(triple.s, Nil))
+    alphaMem.tripleIndexP += triple.p -> (triple :: alphaMem.tripleIndexP.getOrElse(triple.p, Nil))
+    alphaMem.tripleIndexO += triple.o -> (triple :: alphaMem.tripleIndexO.getOrElse(triple.o, Nil))
     alphaMem.linkedChildren.foreach(_.rightActivate(triple, memory))
   }
 
@@ -29,7 +25,7 @@ final class AlphaNode(val pattern: TriplePattern) {
 
 sealed trait BetaNode {
 
-  def spec: List[TriplePattern]
+  def spec: JoinNodeSpec
 
   def addChild(node: BetaNode): Unit
 
@@ -47,7 +43,7 @@ final object BetaRoot extends BetaNode with BetaParent {
 
   def leftActivate(token: Token, memory: WorkingMemory): Unit = ()
   def addChild(node: BetaNode): Unit = ()
-  val spec: List[TriplePattern] = Nil
+  val spec: JoinNodeSpec = JoinNodeSpec(Nil)
   val memory: BetaMemory = new BetaMemory(spec, Nil)
   val children = Nil
   memory.tokens = Token(Map.empty, Nil) :: memory.tokens
@@ -71,10 +67,10 @@ final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Trip
 
 }
 
-final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: AlphaNode, val spec: List[TriplePattern]) extends BetaNode with BetaParent {
+final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: AlphaNode, val spec: JoinNodeSpec) extends BetaNode with BetaParent {
 
-  private val thisPattern = spec.head
-  private val parentBoundVariables = spec.drop(1).flatMap(_.variables).toSet
+  private val thisPattern = spec.pattern.head
+  private val parentBoundVariables = spec.pattern.drop(1).flatMap(_.variables).toSet
   private val thisPatternVariables = thisPattern.variables
   private val matchVariables = parentBoundVariables intersect thisPatternVariables
   private val rightParentPattern = rightParent.pattern
@@ -94,7 +90,7 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
       betaMem.checkLeftLink = true
     }
     var valid = true
-    var possibleTriples: List[Set[Triple]] = Nil
+    var possibleTriples: List[List[Triple]] = Nil
     if (thisPattern.s.isInstanceOf[Variable]) {
       val v = thisPattern.s.asInstanceOf[Variable]
       if (parentBoundVariables(v)) {
@@ -141,8 +137,6 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
         _ = tokensToSend = newToken :: tokensToSend
         (bindingVar, bindingValue) <- newToken.bindings
       } {
-        //betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
-        //betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty).getOrElseUpdate(bindingValue, mutable.Set.empty).add(newToken)
         val currentMap = betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty)
         val currentList = currentMap.getOrElse(bindingValue, Nil)
         currentMap(bindingValue) = newToken :: currentList
@@ -224,7 +218,6 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
     for {
       pattern <- rule.head
     } {
-      //FIXME get rid of casting
       val newTriple = Triple(
         produceNode(pattern.s, token).asInstanceOf[Resource],
         produceNode(pattern.p, token).asInstanceOf[URI],
@@ -237,11 +230,17 @@ final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) ext
   private def produceNode(node: Node, token: Token): ConcreteNode = node match {
     case c: ConcreteNode => c
     case v: Variable     => token.bindings(v)
-    //case AnyNode => error
+    case AnyNode         => throw new RuntimeException("Invalid rule head containing AnyNode")
   }
 
   def addChild(node: BetaNode): Unit = ()
 
-  val spec: List[TriplePattern] = Nil
+  val spec: JoinNodeSpec = JoinNodeSpec(Nil)
+
+}
+
+final case class JoinNodeSpec(pattern: List[TriplePattern]) {
+
+  override val hashCode: Int = pattern.hashCode
 
 }

@@ -20,7 +20,7 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
         val blankPattern = pattern.blankVariables
         val alphaNode = alphaNodeIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
         val thisPatternSequence = pattern :: parentPatterns
-        val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, thisPatternSequence))
+        val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, JoinNodeSpec(thisPatternSequence)))
         parent.addChild(joinNode)
         alphaNode.addChild(joinNode)
         if (parent == BetaRoot) topJoinNodes += joinNode
@@ -65,24 +65,21 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
   private val DegeneratePattern = TriplePattern(AnyNode, AnyNode, AnyNode)
 
   protected[engine] def processTriple(triple: Triple, memory: WorkingMemory): Unit = {
-    if (!memory.facts(triple)) {
-      memory.facts += triple
+    if (memory.facts.add(triple)) {
       memory.agenda = memory.agenda.enqueue(triple)
     }
-
   }
 
   protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory) = {
-    if (!memory.facts(triple)) {
-      memory.facts += triple
-      //if (memory.facts.size % 100000 == 0) println(memory.facts.size)
-      memory.derivations = memory.derivations |+| Map(triple -> List(derivation))
+    if (memory.facts.add(triple)) {
+      memory.derivations += triple -> (derivation :: memory.derivations.getOrElse(triple, Nil))
       memory.agenda = memory.agenda.enqueue(triple)
     }
   }
 
   private def injectTriple(triple: Triple, memory: WorkingMemory): Unit = {
-    val patterns = List(DegeneratePattern,
+    val patterns = List(
+      DegeneratePattern,
       TriplePattern(AnyNode, AnyNode, triple.o),
       TriplePattern(AnyNode, triple.p, AnyNode),
       TriplePattern(AnyNode, triple.p, triple.o),

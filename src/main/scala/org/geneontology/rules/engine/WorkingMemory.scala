@@ -4,14 +4,14 @@ import scala.collection.immutable.Queue
 import scala.collection.mutable
 import scala.collection.mutable.AnyRefMap
 
-final class WorkingMemory(var asserted: Set[Triple]) {
+final class WorkingMemory(val asserted: Set[Triple]) {
 
   var agenda: Queue[Triple] = Queue.empty
-  var facts: Set[Triple] = asserted
+  val facts: mutable.Set[Triple] = mutable.Set.empty ++ asserted
   var derivations: Map[Triple, List[Derivation]] = Map.empty
 
   val alpha: mutable.Map[TriplePattern, AlphaMemory] = AnyRefMap.empty
-  val beta: mutable.Map[List[TriplePattern], BetaMemory] = AnyRefMap.empty
+  val beta: mutable.Map[JoinNodeSpec, BetaMemory] = AnyRefMap.empty
   beta += (BetaRoot.spec -> BetaRoot.memory)
 
   def explain(triple: Triple): Set[Explanation] = explainAll(Set(triple))
@@ -48,19 +48,18 @@ final class WorkingMemory(var asserted: Set[Triple]) {
 final class AlphaMemory(pattern: TriplePattern) {
 
   var triples: List[Triple] = Nil
-  var tripleIndexS: Map[ConcreteNode, Set[Triple]] = Map.empty
-  var tripleIndexP: Map[ConcreteNode, Set[Triple]] = Map.empty
-  var tripleIndexO: Map[ConcreteNode, Set[Triple]] = Map.empty
+  var tripleIndexS: Map[ConcreteNode, List[Triple]] = Map.empty
+  var tripleIndexP: Map[ConcreteNode, List[Triple]] = Map.empty
+  var tripleIndexO: Map[ConcreteNode, List[Triple]] = Map.empty
   var linkedChildren: List[JoinNode] = Nil
 
 }
 
-final class BetaMemory(val spec: List[TriplePattern], initialLinkedChildren: List[BetaNode]) {
+final class BetaMemory(val spec: JoinNodeSpec, initialLinkedChildren: List[BetaNode]) {
 
   var tokens: List[Token] = Nil
   var checkRightLink: Boolean = true
   var checkLeftLink: Boolean = false
-  //val tokenIndex: mutable.Map[(Variable, ConcreteNode), mutable.Set[Token]] = AnyRefMap.empty
   val tokenIndex: mutable.Map[Variable, mutable.Map[ConcreteNode, List[Token]]] = AnyRefMap.empty
   var linkedChildren: List[BetaNode] = initialLinkedChildren
 
