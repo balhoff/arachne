@@ -22,9 +22,9 @@ licenses := Seq("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Cla
 
 homepage := Some(url("https://github.com/balhoff/arachne"))
 
-scalaVersion  := "2.12.2"
+scalaVersion  := "2.12.6"
 
-crossScalaVersions := Seq("2.11.11", "2.12.2")
+crossScalaVersions := Seq("2.11.11", "2.12.6")
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
