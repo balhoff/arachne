@@ -20,7 +20,7 @@ final class WorkingMemory(val asserted: Set[Triple]) {
     val subExplanations = for {
       triple <- triples
     } yield derivations.get(triple) match {
-      case None => Set(Explanation(Set(triple), Set.empty))
+      case None                    => Set(Explanation(Set(triple), Set.empty))
       case Some(tripleDerivations) => for {
         derivation <- tripleDerivations.toSet[Derivation]
         current = Explanation(Set.empty, Set(derivation.rule))
@@ -34,7 +34,7 @@ final class WorkingMemory(val asserted: Set[Triple]) {
 
   private def cartesianProduct[T](xss: Set[Set[T]]): Set[Set[T]] = xss match {
     case e if e.isEmpty => Set(Set.empty)
-    case f =>
+    case f              =>
       val head = f.head
       val tail = f - head
       for {

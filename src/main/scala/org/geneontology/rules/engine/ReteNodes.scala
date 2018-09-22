@@ -39,13 +39,15 @@ sealed trait BetaParent {
 
 }
 
-final object BetaRoot extends BetaNode with BetaParent {
+object BetaRoot extends BetaNode with BetaParent {
 
   def leftActivate(token: Token, memory: WorkingMemory): Unit = ()
+
   def addChild(node: BetaNode): Unit = ()
+
   val spec: JoinNodeSpec = JoinNodeSpec(Nil)
   val memory: BetaMemory = new BetaMemory(spec, Nil)
-  val children = Nil
+  val children: List[BetaNode] = Nil
   memory.tokens = Token(Map.empty, Nil) :: memory.tokens
 
 }
@@ -154,10 +156,10 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
 
   private val checkTriple: Triple => Boolean = thisPattern match {
     case TriplePattern(s: Variable, p: Variable, o: Variable) if (s == p) && (p == o) => (triple: Triple) => (triple.s == triple.p) && (triple.p == triple.o)
-    case TriplePattern(s: Variable, _, o: Variable) if s == o => (triple: Triple) => triple.s == triple.o
-    case TriplePattern(s: Variable, p: Variable, _) if s == p => (triple: Triple) => triple.s == triple.p
-    case TriplePattern(_, p: Variable, o: Variable) if p == o => (triple: Triple) => triple.p == triple.o
-    case _ => (triple: Triple) => true
+    case TriplePattern(s: Variable, _, o: Variable) if s == o                         => (triple: Triple) => triple.s == triple.o
+    case TriplePattern(s: Variable, p: Variable, _) if s == p                         => (triple: Triple) => triple.s == triple.p
+    case TriplePattern(_, p: Variable, o: Variable) if p == o                         => (triple: Triple) => triple.p == triple.o
+    case _                                                                            => (triple: Triple) => true
   }
 
   private val makeBindings: Triple => Map[Variable, ConcreteNode] = {
@@ -165,7 +167,7 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
     if (thisPattern.s.isInstanceOf[Variable]) funcs = ((triple: Triple) => thisPattern.s.asInstanceOf[Variable] -> triple.s) :: funcs
     if (thisPattern.p.isInstanceOf[Variable]) funcs = ((triple: Triple) => thisPattern.p.asInstanceOf[Variable] -> triple.p) :: funcs
     if (thisPattern.o.isInstanceOf[Variable]) funcs = ((triple: Triple) => thisPattern.o.asInstanceOf[Variable] -> triple.o) :: funcs
-    (triple: Triple) => {
+    triple: Triple => {
       var bindings: Map[Variable, ConcreteNode] = Map.empty
       funcs.foreach(f => bindings += f(triple))
       bindings
@@ -184,7 +186,7 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
       var tokensToSend: List[Token] = Nil
       val goodTokens = if (matchVariables.nonEmpty) {
         val requiredToMatch = bindings.filterKeys(matchVariables)
-        requiredToMatch.map { case (bindingVar, bindingValue) => parentMem.tokenIndex.getOrElse(bindingVar, mutable.AnyRefMap.empty).getOrElse(bindingValue, Nil) }.reduce(_ intersect _) //TODO can immutable empties be used here
+        requiredToMatch.map { case (bindingVar, bindingValue) => parentMem.tokenIndex.getOrElse(bindingVar, mutable.AnyRefMap.empty[ConcreteNode, List[Token]]).getOrElse(bindingValue, Nil) }.reduce(_ intersect _) //TODO can immutable empties be used here
       } else parentMem.tokens
       for {
         parentToken <- goodTokens

@@ -1,22 +1,20 @@
 package org.geneontology.rules.engine
 
-import scala.collection.mutable
-
-import scalaz._
-import scalaz.Scalaz._
 import scala.collection.immutable.Queue
+import scala.collection.mutable
 
 final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean) {
 
-  val rules = inputRules.toSet
+  val rules: Set[Rule] = inputRules.toSet
   val (alphaIndex: Map[TriplePattern, AlphaNode], topBetaNodes: Set[JoinNode]) = processRules(rules)
 
   private def processRules(rules: Iterable[Rule]): (Map[TriplePattern, AlphaNode], Set[JoinNode]) = {
     val alphaNodeIndex: mutable.Map[TriplePattern, AlphaNode] = mutable.AnyRefMap.empty
     val joinIndex: mutable.Map[List[TriplePattern], JoinNode] = mutable.AnyRefMap.empty
     var topJoinNodes: Set[JoinNode] = Set.empty
+
     def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode with BetaParent, parentPatterns: List[TriplePattern], rule: Rule): Unit = patterns match {
-      case pattern :: rest => {
+      case pattern :: rest =>
         val blankPattern = pattern.blankVariables
         val alphaNode = alphaNodeIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
         val thisPatternSequence = pattern :: parentPatterns
@@ -25,12 +23,11 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
         alphaNode.addChild(joinNode)
         if (parent == BetaRoot) topJoinNodes += joinNode
         processRulePatterns(rest, joinNode, thisPatternSequence, rule)
-      }
-      case Nil => {
+      case Nil             =>
         val pNode = new ProductionNode(rule, parent, this)
         parent.addChild(pNode)
-      }
     }
+
     for {
       rule <- rules
     } processRulePatterns(rule.body, BetaRoot, Nil, rule)
@@ -70,7 +67,7 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
     }
   }
 
-  protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory) = {
+  protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory): Unit = {
     if (memory.facts.add(triple)) {
       memory.derivations += triple -> (derivation :: memory.derivations.getOrElse(triple, Nil))
       memory.agenda = memory.agenda.enqueue(triple)

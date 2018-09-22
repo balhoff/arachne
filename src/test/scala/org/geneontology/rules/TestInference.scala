@@ -1,13 +1,14 @@
 package org.geneontology.rules
 
 import org.apache.jena.rdf.model.ModelFactory
-import org.semanticweb.owlapi.apibinding.OWLManager
-import org.geneontology.jena.OWLtoRules
-import org.semanticweb.owlapi.model.parameters.Imports
-import scala.collection.JavaConversions._
-import org.geneontology.rules.util.Bridge
-import org.geneontology.rules.engine.RuleEngine
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
+import org.geneontology.jena.OWLtoRules
+import org.geneontology.rules.engine.RuleEngine
+import org.geneontology.rules.util.Bridge
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.model.parameters.Imports
+
+import scala.collection.JavaConverters._
 
 class TestInference extends UnitSpec {
 
@@ -18,7 +19,7 @@ class TestInference extends UnitSpec {
     val ontology = manager.loadOntologyFromOntologyDocument(this.getClass.getResourceAsStream("ro-merged.owl"))
     val jenaRules = OWLtoRules.translate(ontology, Imports.INCLUDED, true, true, true, true)
     val rules = Bridge.rulesFromJena(jenaRules)
-    val triples = dataModel.listStatements.map(_.asTriple).map(Bridge.tripleFromJena).toSeq
+    val triples = dataModel.listStatements.asScala.map(_.asTriple).map(Bridge.tripleFromJena).toSeq
 
     val engine = new RuleEngine(rules, true)
     val memory = engine.processTriples(triples)
@@ -26,11 +27,11 @@ class TestInference extends UnitSpec {
 
     arachneInferredTriples.size shouldEqual 611
 
-    val reasoner = new GenericRuleReasoner(jenaRules.toList)
+    val reasoner = new GenericRuleReasoner(jenaRules.toList.asJava)
     reasoner.setMode(GenericRuleReasoner.FORWARD_RETE)
     val infModel = ModelFactory.createInfModel(reasoner, dataModel)
     infModel.prepare()
-    val jenaInferredTriples = infModel.listStatements().toSet.map(_.asTriple).map(Bridge.tripleFromJena)
+    val jenaInferredTriples = infModel.listStatements().asScala.toSet.map(_.asTriple).map(Bridge.tripleFromJena)
 
     arachneInferredTriples shouldEqual jenaInferredTriples
   }

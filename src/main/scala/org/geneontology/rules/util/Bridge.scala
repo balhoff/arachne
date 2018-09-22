@@ -1,23 +1,11 @@
 package org.geneontology.rules.util
 
-import org.apache.jena.graph.{ Node => JenaNode }
-import org.apache.jena.graph.Node_ANY
-import org.apache.jena.graph.Node_Blank
-import org.apache.jena.graph.Node_Literal
-import org.apache.jena.graph.Node_URI
-import org.apache.jena.graph.Node_Variable
-import org.apache.jena.graph.{ Triple => JenaTriple }
-import org.apache.jena.reasoner.{ TriplePattern => JenaTriplePattern }
-import org.apache.jena.reasoner.rulesys.ClauseEntry
-import org.apache.jena.reasoner.rulesys.{ Rule => JenaRule }
-import org.geneontology.rules.engine._
-import org.geneontology.rules.engine.Node
-
-import scalaz._
-import scalaz.Scalaz._
-import org.apache.jena.rdf.model.ResourceFactory
-import org.apache.jena.graph.NodeFactory
 import org.apache.jena.datatypes.TypeMapper
+import org.apache.jena.graph.{NodeFactory, Node_ANY, Node_Blank, Node_Literal, Node_URI, Node_Variable, Node => JenaNode, Triple => JenaTriple}
+import org.apache.jena.reasoner.rulesys.{ClauseEntry, Rule => JenaRule}
+import org.apache.jena.reasoner.{TriplePattern => JenaTriplePattern}
+import org.geneontology.rules.engine.{Node, _}
+import scalaz.Scalaz._
 
 object Bridge {
 
@@ -55,10 +43,10 @@ object Bridge {
     jenaFromNode(triple.o))
 
   def jenaFromNode(node: Node): JenaNode = node match {
-    case AnyNode        => JenaNode.ANY
-    case Variable(name) => NodeFactory.createVariable(name)
-    case URI(text)      => NodeFactory.createURI(text)
-    case BlankNode(id)  => NodeFactory.createBlankNode(id)
+    case AnyNode                                   => JenaNode.ANY
+    case Variable(name)                            => NodeFactory.createVariable(name)
+    case URI(text)                                 => NodeFactory.createURI(text)
+    case BlankNode(id)                             => NodeFactory.createBlankNode(id)
     case Literal(lexicalForm, URI(datatype), lang) => lang match {
       case None           => NodeFactory.createLiteral(lexicalForm, TypeMapper.getInstance.getSafeTypeByName(datatype))
       case Some(language) => NodeFactory.createLiteral(lexicalForm, language, TypeMapper.getInstance.getSafeTypeByName(datatype))
