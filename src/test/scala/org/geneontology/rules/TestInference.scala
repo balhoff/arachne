@@ -1,6 +1,6 @@
 package org.geneontology.rules
 
-import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.{ModelFactory, Statement}
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
 import org.geneontology.jena.OWLtoRules
 import org.geneontology.rules.engine.RuleEngine
@@ -31,7 +31,7 @@ class TestInference extends UnitSpec {
     reasoner.setMode(GenericRuleReasoner.FORWARD_RETE)
     val infModel = ModelFactory.createInfModel(reasoner, dataModel)
     infModel.prepare()
-    val jenaInferredTriples = infModel.listStatements().asScala.toSet.map(_.asTriple).map(Bridge.tripleFromJena)
+    val jenaInferredTriples = infModel.listStatements().asScala.toSet[Statement].map(_.asTriple).map(Bridge.tripleFromJena)
 
     arachneInferredTriples shouldEqual jenaInferredTriples
   }
