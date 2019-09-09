@@ -24,7 +24,7 @@ homepage := Some(url("https://github.com/balhoff/arachne"))
 
 scalaVersion  := "2.13.0"
 
-crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0")
+crossScalaVersions := Seq("2.12.8", "2.13.0")
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -41,7 +41,7 @@ libraryDependencies ++= {
     "org.scalaz"                  %% "scalaz-core"            % "7.2.27",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.2.0" pomOnly(),
     "org.geneontology"            %% "owl-to-rules"           % "0.3.6",
-    "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.2.8",
+    "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.5.13",
     "org.backuity.clist"          %% "clist-core"             % "3.5.1",
     "org.backuity.clist"          %% "clist-macros"           % "3.5.1" % "provided",
     "com.typesafe.scala-logging"  %% "scala-logging"          % "3.9.2",
