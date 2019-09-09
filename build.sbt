@@ -39,7 +39,7 @@ fork in Test := true
 libraryDependencies ++= {
   Seq(
     "org.scalaz"                  %% "scalaz-core"            % "7.2.27",
-    "org.apache.jena"             %  "apache-jena-libs"       % "3.2.0" pomOnly(),
+    "org.apache.jena"             %  "apache-jena-libs"       % "3.12.0" pomOnly(),
     "org.geneontology"            %% "owl-to-rules"           % "0.3.6",
     "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.5.13",
     "org.backuity.clist"          %% "clist-core"             % "3.5.1",
