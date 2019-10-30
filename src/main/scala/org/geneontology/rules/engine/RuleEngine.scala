@@ -3,6 +3,7 @@ package org.geneontology.rules.engine
 import scala.collection.immutable.Queue
 import scala.collection.mutable
 
+
 final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean) {
 
   val rules: Set[Rule] = inputRules.toSet
