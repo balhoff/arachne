@@ -41,7 +41,7 @@ libraryDependencies ++= {
     "org.scalaz"                  %% "scalaz-core"            % "7.2.29",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.2.0" pomOnly(),
     "org.geneontology"            %% "owl-to-rules"           % "0.3.6",
-    "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.5.14",
+    "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "5.1.12",
     "org.backuity.clist"          %% "clist-core"             % "3.5.1",
     "org.backuity.clist"          %% "clist-macros"           % "3.5.1" % "provided",
     "com.typesafe.scala-logging"  %% "scala-logging"          % "3.9.2",
