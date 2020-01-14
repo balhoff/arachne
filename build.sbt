@@ -22,9 +22,9 @@ licenses := Seq("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Cla
 
 homepage := Some(url("https://github.com/balhoff/arachne"))
 
-scalaVersion  := "2.13.0"
+scalaVersion  := "2.13.1"
 
-crossScalaVersions := Seq("2.12.9", "2.13.0")
+crossScalaVersions := Seq("2.12.10", "2.13.1")
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -40,13 +40,11 @@ libraryDependencies ++= {
   Seq(
     "org.scalaz"                  %% "scalaz-core"            % "7.2.30",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.13.1" pomOnly(),
-    "org.geneontology"            %% "owl-to-rules"           % "0.3.6",
+    "org.geneontology"            %% "owl-to-rules"           % "0.3.7",
     "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.5.14",
     "org.backuity.clist"          %% "clist-core"             % "3.5.1",
     "org.backuity.clist"          %% "clist-macros"           % "3.5.1" % "provided",
-    "com.typesafe.scala-logging"  %% "scala-logging"          % "3.9.2",
-    "ch.qos.logback"              %  "logback-classic"        % "1.2.3",
-    "org.codehaus.groovy"         %  "groovy-all"             % "2.4.6",
+    "com.outr"                    %% "scribe-slf4j"           % "2.7.10",
     "org.scalatest"               %% "scalatest"              % "3.1.0" % Test
   )
 }
