@@ -25,12 +25,12 @@ object Main extends CliMain[Unit](
 
   JenaSystem.init()
 
-  var ontOpt = opt[Option[String]](name = "ontology", description = "OWL ontology to import into reasoning rules")
-  var rulesOpt = opt[Option[String]](name = "rules", description = "Jena-syntax rules file to import")
-  var exportFileOpt = opt[Option[File]](name = "export", description = "export RDF triples to Turtle file")
-  var inferredOnly = opt[Boolean](default = false, name = "inferred-only", description = "export inferred triples only")
-  var dataFileOrFolder = opt[File](name = "data", description = "file or folder of RDF data files", default = new File("data"))
-  var indirectTypes = opt[Boolean](name = "indirect-types", description = "mark indirect types with additional triple", default = false)
+  var ontOpt: Option[String] = opt[Option[String]](name = "ontology", description = "OWL ontology to import into reasoning rules")
+  var rulesOpt: Option[String] = opt[Option[String]](name = "rules", description = "Jena-syntax rules file to import")
+  var exportFileOpt: Option[File] = opt[Option[File]](name = "export", description = "export RDF triples to Turtle file")
+  var inferredOnly: Boolean = opt[Boolean](default = false, name = "inferred-only", description = "export inferred triples only")
+  var dataFileOrFolder: File = opt[File](name = "data", description = "file or folder of RDF data files", default = new File("data"))
+  var indirectTypes: Boolean = opt[Boolean](name = "indirect-types", description = "mark indirect types with additional triple", default = false)
 
   def run: Unit = {
     val ontIRIOpt = ontOpt.map { ontPath => if (ontPath.startsWith("http")) IRI.create(ontPath) else IRI.create(new File(ontPath)) }
