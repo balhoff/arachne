@@ -38,14 +38,14 @@ fork in Test := true
 
 libraryDependencies ++= {
   Seq(
-    "org.scalaz"                  %% "scalaz-core"            % "7.3.2",
-    "org.apache.jena"             %  "apache-jena-libs"       % "4.2.0" pomOnly(),
+    "org.scalaz"                  %% "scalaz-core"            % "7.3.5",
+    "org.apache.jena"             %  "apache-jena-libs"       % "3.17.0" pomOnly(),
     "org.geneontology"            %% "owl-to-rules"           % "0.3.7",
     "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.5.15",
     "org.backuity.clist"          %% "clist-core"             % "3.5.1",
     "org.backuity.clist"          %% "clist-macros"           % "3.5.1" % "provided",
     "com.outr"                    %% "scribe-slf4j"           % "2.8.3",
-    "org.scalatest"               %% "scalatest"              % "3.1.4" % Test
+    "org.scalatest"               %% "scalatest"              % "3.2.10" % Test
   )
 }
 
