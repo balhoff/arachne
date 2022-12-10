@@ -50,10 +50,9 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
     for {
       node <- topBetaNodes
     } node.linkToAlpha(memory)
-    memory.agenda = Queue(triples.toSeq: _*)
+    memory.agenda.pushAll(triples)
     while (memory.agenda.nonEmpty) {
-      val (triple, rest) = memory.agenda.dequeue
-      memory.agenda = rest
+      val triple = memory.agenda.pop()
       injectTriple(triple, memory)
     }
     memory
@@ -63,14 +62,14 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
 
   protected[engine] def processTriple(triple: Triple, memory: WorkingMemory): Unit = {
     if (memory.facts.add(triple)) {
-      memory.agenda = memory.agenda.enqueue(triple)
+      memory.agenda.push(triple)
     }
   }
 
   protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory): Unit = {
     if (memory.facts.add(triple)) {
       memory.derivations += triple -> (derivation :: memory.derivations.getOrElse(triple, Nil))
-      memory.agenda = memory.agenda.enqueue(triple)
+      memory.agenda.push(triple)
     }
   }
 
