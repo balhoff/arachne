@@ -74,20 +74,21 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
   }
 
   private def injectTriple(triple: Triple, memory: WorkingMemory): Unit = {
-    val patterns = List(
-      DegeneratePattern,
-      TriplePattern(AnyNode, AnyNode, triple.o),
-      TriplePattern(AnyNode, triple.p, AnyNode),
-      TriplePattern(AnyNode, triple.p, triple.o),
-      TriplePattern(triple.s, AnyNode, AnyNode),
-      TriplePattern(triple.s, AnyNode, triple.o),
-      TriplePattern(triple.s, triple.p, AnyNode),
-      TriplePattern(triple.s, triple.p, triple.o))
-    for {
-      pattern <- patterns
-      alphaNode <- alphaIndex.get(pattern)
-    } alphaNode.activate(triple, memory)
+    activateAlphaNode(DegeneratePattern, triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(AnyNode, AnyNode, triple.o), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(AnyNode, triple.p, AnyNode), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(AnyNode, triple.p, triple.o), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, AnyNode, AnyNode), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, AnyNode, triple.o), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, triple.p, AnyNode), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, triple.p, triple.o), triple: Triple, memory: WorkingMemory)
   }
+
+  private def activateAlphaNode(pattern: TriplePattern, triple: Triple, memory: WorkingMemory): Unit =
+    alphaIndex.get(pattern) match {
+      case Some(alphaNode) => alphaNode.activate(triple, memory)
+      case None            => ()
+    }
 
 }
 
