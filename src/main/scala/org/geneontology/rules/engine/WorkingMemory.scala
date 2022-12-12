@@ -4,7 +4,8 @@ import scala.collection.mutable
 
 final class WorkingMemory(val asserted: Set[Triple]) {
 
-  var agenda: mutable.Stack[Triple] = mutable.Stack.empty
+  val assertedAgenda: mutable.Stack[Triple] = mutable.Stack.empty
+  val agenda: mutable.Stack[Triple] = mutable.Stack.empty
   val facts: mutable.Set[Triple] = mutable.Set.empty ++ asserted
   var derivations: Map[Triple, List[Derivation]] = Map.empty
 
