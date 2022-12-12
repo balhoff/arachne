@@ -1,6 +1,6 @@
 package org.geneontology.rules.engine
 
-import scala.collection.immutable.Queue
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean) {
@@ -13,20 +13,22 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
     val joinIndex: mutable.Map[List[TriplePattern], JoinNode] = mutable.AnyRefMap.empty
     var topJoinNodes: Set[JoinNode] = Set.empty
 
-    def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode with BetaParent, parentPatterns: List[TriplePattern], rule: Rule): Unit = patterns match {
-      case pattern :: rest =>
-        val blankPattern = pattern.blankVariables
-        val alphaNode = alphaNodeIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
-        val thisPatternSequence = pattern :: parentPatterns
-        val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, JoinNodeSpec(thisPatternSequence)))
-        parent.addChild(joinNode)
-        alphaNode.addChild(joinNode)
-        if (parent == BetaRoot) topJoinNodes += joinNode
-        processRulePatterns(rest, joinNode, thisPatternSequence, rule)
-      case Nil             =>
-        val pNode = new ProductionNode(rule, parent, this)
-        parent.addChild(pNode)
-    }
+    @tailrec
+    def processRulePatterns(patterns: List[TriplePattern], parent: BetaNode with BetaParent, parentPatterns: List[TriplePattern], rule: Rule): Unit =
+      patterns match {
+        case pattern :: rest =>
+          val blankPattern = pattern.blankVariables
+          val alphaNode = alphaNodeIndex.getOrElseUpdate(blankPattern, new AlphaNode(blankPattern))
+          val thisPatternSequence = pattern :: parentPatterns
+          val joinNode = joinIndex.getOrElseUpdate(thisPatternSequence, new JoinNode(parent, alphaNode, JoinNodeSpec(thisPatternSequence)))
+          parent.addChild(joinNode)
+          alphaNode.addChild(joinNode)
+          if (parent == BetaRoot) topJoinNodes += joinNode
+          processRulePatterns(rest, joinNode, thisPatternSequence, rule)
+        case Nil             =>
+          val pNode = new ProductionNode(rule, parent, this)
+          parent.addChild(pNode)
+      }
 
     for {
       rule <- rules
@@ -50,10 +52,13 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
     for {
       node <- topBetaNodes
     } node.linkToAlpha(memory)
-    memory.agenda = Queue(triples.toSeq: _*)
+    memory.assertedAgenda.pushAll(triples)
+    while (memory.assertedAgenda.nonEmpty) {
+      val triple = memory.assertedAgenda.pop()
+      injectTriple(triple, memory)
+    }
     while (memory.agenda.nonEmpty) {
-      val (triple, rest) = memory.agenda.dequeue
-      memory.agenda = rest
+      val triple = memory.agenda.pop()
       injectTriple(triple, memory)
     }
     memory
@@ -61,34 +66,33 @@ final class RuleEngine(inputRules: Iterable[Rule], val storeDerivations: Boolean
 
   private val DegeneratePattern = TriplePattern(AnyNode, AnyNode, AnyNode)
 
-  protected[engine] def processTriple(triple: Triple, memory: WorkingMemory): Unit = {
+  protected[engine] def processTriple(triple: Triple, memory: WorkingMemory): Unit =
     if (memory.facts.add(triple)) {
-      memory.agenda = memory.agenda.enqueue(triple)
+      memory.agenda.push(triple)
     }
-  }
 
-  protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory): Unit = {
+  protected[engine] def processDerivedTriple(triple: Triple, derivation: Derivation, memory: WorkingMemory): Unit =
     if (memory.facts.add(triple)) {
       memory.derivations += triple -> (derivation :: memory.derivations.getOrElse(triple, Nil))
-      memory.agenda = memory.agenda.enqueue(triple)
+      memory.agenda.push(triple)
     }
-  }
 
   private def injectTriple(triple: Triple, memory: WorkingMemory): Unit = {
-    val patterns = List(
-      DegeneratePattern,
-      TriplePattern(AnyNode, AnyNode, triple.o),
-      TriplePattern(AnyNode, triple.p, AnyNode),
-      TriplePattern(AnyNode, triple.p, triple.o),
-      TriplePattern(triple.s, AnyNode, AnyNode),
-      TriplePattern(triple.s, AnyNode, triple.o),
-      TriplePattern(triple.s, triple.p, AnyNode),
-      TriplePattern(triple.s, triple.p, triple.o))
-    for {
-      pattern <- patterns
-      alphaNode <- alphaIndex.get(pattern)
-    } alphaNode.activate(triple, memory)
+    activateAlphaNode(DegeneratePattern, triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(AnyNode, AnyNode, triple.o), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(AnyNode, triple.p, AnyNode), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(AnyNode, triple.p, triple.o), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, AnyNode, AnyNode), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, AnyNode, triple.o), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, triple.p, AnyNode), triple: Triple, memory: WorkingMemory)
+    activateAlphaNode(TriplePattern(triple.s, triple.p, triple.o), triple: Triple, memory: WorkingMemory)
   }
+
+  private def activateAlphaNode(pattern: TriplePattern, triple: Triple, memory: WorkingMemory): Unit =
+    alphaIndex.get(pattern) match {
+      case Some(alphaNode) => alphaNode.activate(triple, memory)
+      case None            => ()
+    }
 
 }
 
