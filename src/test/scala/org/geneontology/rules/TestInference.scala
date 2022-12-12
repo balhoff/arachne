@@ -8,7 +8,7 @@ import org.geneontology.rules.util.Bridge
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.parameters.Imports
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class TestInference extends UnitSpec {
 
