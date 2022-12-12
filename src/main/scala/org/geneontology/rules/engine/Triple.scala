@@ -70,6 +70,14 @@ final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
 
   override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
 
+  override def equals(that: Any): Boolean =
+    if (this.hashCode == that.hashCode) {
+      if (that.isInstanceOf[TriplePattern]) {
+        val thatTriple = that.asInstanceOf[TriplePattern]
+        this.eq(thatTriple) || ((this.o == thatTriple.o) && (this.s == thatTriple.s) && (this.p == thatTriple.p))
+      } else false
+    } else false
+
 }
 
 final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike {
