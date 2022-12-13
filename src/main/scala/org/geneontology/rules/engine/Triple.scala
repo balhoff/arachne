@@ -86,7 +86,14 @@ final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike
 
 }
 
-final case class Rule(name: Option[String], body: List[TriplePattern], head: List[TriplePattern]) {
+/**
+ *
+ * @param name
+ * @param body
+ * @param head
+ * @param action an optional function to call when the rule is triggered. Provides a way to add arbitrary custom behaviors to the rule engine.
+ */
+final case class Rule(name: Option[String], body: List[TriplePattern], head: List[TriplePattern], action: Option[(Rule, Token, WorkingMemory) => Unit] = None) {
 
   override def toString: String = s"[${name.getOrElse("")} ${body.mkString(" ^ ")} -> ${head.mkString(" ^ ")} ]"
 
