@@ -4,6 +4,11 @@ import scala.collection.mutable
 
 final class WorkingMemory(val asserted: Set[Triple]) {
 
+  /**
+   * Arbitrary container which can store output from user-defined rule actions
+   */
+  var userInfo: Any = None
+
   val assertedAgenda: mutable.Stack[Triple] = mutable.Stack.empty
   val agenda: mutable.Stack[Triple] = mutable.Stack.empty
   val facts: mutable.Set[Triple] = mutable.Set.empty ++ asserted

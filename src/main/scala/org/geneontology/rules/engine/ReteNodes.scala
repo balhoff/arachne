@@ -221,6 +221,7 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
 final class ProductionNode(rule: Rule, parent: BetaNode, engine: RuleEngine) extends BetaNode {
 
   def leftActivate(token: Token, memory: WorkingMemory): Unit = {
+    rule.action.foreach(f => f(rule, token, memory))
     for {
       pattern <- rule.head
     } {
