@@ -64,7 +64,7 @@ final case class Token(bindings: Map[Variable, ConcreteNode], triples: List[Trip
       } else false
     } else false
 
-  def extend(tripleBindings: Map[Variable, ConcreteNode], triple: Triple): Token =
+  def extend(tripleBindings: Iterable[(Variable, ConcreteNode)], triple: Triple): Token =
     Token(bindings ++ tripleBindings, triple :: triples)
 
 }
@@ -131,6 +131,7 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
         case _            => possibleTriples.reduce(_ intersect _)
       }
       var tokensToSend: List[Token] = Nil
+
       for {
         newTriple <- newTriples
         tripleBindings = makeBindings(newTriple)
@@ -140,8 +141,10 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
         (bindingVar, bindingValue) <- newToken.bindings
       } {
         val currentMap = betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty)
-        val currentList = currentMap.getOrElse(bindingValue, Nil)
-        currentMap(bindingValue) = newToken :: currentList
+        currentMap.updateWith(bindingValue) {
+          case Some(currentList) => Some(newToken :: currentList)
+          case None              => Some(newToken :: Nil)
+        }
       }
       activateChildren(tokensToSend, betaMem.linkedChildren, memory)
     }
@@ -162,14 +165,14 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
     case _                                                                            => (triple: Triple) => true
   }
 
-  private val makeBindings: Triple => Map[Variable, ConcreteNode] = {
+  private val makeBindings: Triple => List[(Variable, ConcreteNode)] = {
     var funcs: List[Triple => (Variable, ConcreteNode)] = Nil
     if (thisPattern.s.isInstanceOf[Variable]) funcs = ((triple: Triple) => thisPattern.s.asInstanceOf[Variable] -> triple.s) :: funcs
     if (thisPattern.p.isInstanceOf[Variable]) funcs = ((triple: Triple) => thisPattern.p.asInstanceOf[Variable] -> triple.p) :: funcs
     if (thisPattern.o.isInstanceOf[Variable]) funcs = ((triple: Triple) => thisPattern.o.asInstanceOf[Variable] -> triple.o) :: funcs
     triple: Triple => {
-      var bindings: Map[Variable, ConcreteNode] = Map.empty
-      funcs.foreach(f => bindings += f(triple))
+      var bindings: List[(Variable, ConcreteNode)] = Nil
+      funcs.foreach(f => bindings = f(triple) :: bindings)
       bindings
     }
   }
@@ -185,8 +188,11 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
       val bindings = makeBindings(triple)
       var tokensToSend: List[Token] = Nil
       val goodTokens = if (matchVariables.nonEmpty) {
-        val requiredToMatch = bindings.filterKeys(matchVariables)
-        requiredToMatch.map { case (bindingVar, bindingValue) => parentMem.tokenIndex.getOrElse(bindingVar, mutable.AnyRefMap.empty[ConcreteNode, List[Token]]).getOrElse(bindingValue, Nil) }.reduce(_ intersect _) //TODO can immutable empties be used here
+        val requiredToMatch = bindings.filter { case (v, _) => matchVariables(v) }
+        requiredToMatch.map { case (bindingVar, bindingValue) =>
+          parentMem.tokenIndex.getOrElse(bindingVar, Map.empty[ConcreteNode, List[Token]])
+            .getOrElse(bindingValue, Nil)
+        }.reduce(_ intersect _)
       } else parentMem.tokens
       for {
         parentToken <- goodTokens
@@ -195,13 +201,11 @@ final class JoinNode(val leftParent: BetaNode with BetaParent, rightParent: Alph
         _ = tokensToSend = newToken :: tokensToSend
         (bindingVar, bindingValue) <- newToken.bindings
       } {
-        //betaMem.tokenIndex.getOrElseUpdate(binding, mutable.Set.empty).add(newToken)
         val currentMap = betaMem.tokenIndex.getOrElseUpdate(bindingVar, mutable.AnyRefMap.empty)
-        val currentList = currentMap.getOrElse(bindingValue, Nil)
-        currentMap(bindingValue) = newToken :: currentList
-        //.add(newToken)
-        //val set = betaMem.tokenIndex(binding)
-        //if (set.size > 1000000) println(s"Big: $binding")
+        currentMap.updateWith(bindingValue) {
+          case Some(currentList) => Some(newToken :: currentList)
+          case None              => Some(newToken :: Nil)
+        }
       }
       activateChildren(tokensToSend, betaMem.linkedChildren, memory)
     }

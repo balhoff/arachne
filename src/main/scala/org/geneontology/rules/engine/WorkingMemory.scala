@@ -1,17 +1,16 @@
 package org.geneontology.rules.engine
 
-import scala.collection.immutable.Queue
 import scala.collection.mutable
-import scala.collection.mutable.AnyRefMap
 
 final class WorkingMemory(val asserted: Set[Triple]) {
 
-  var agenda: Queue[Triple] = Queue.empty
+  val assertedAgenda: mutable.Stack[Triple] = mutable.Stack.empty
+  val agenda: mutable.Stack[Triple] = mutable.Stack.empty
   val facts: mutable.Set[Triple] = mutable.Set.empty ++ asserted
   var derivations: Map[Triple, List[Derivation]] = Map.empty
 
-  val alpha: mutable.Map[TriplePattern, AlphaMemory] = AnyRefMap.empty
-  val beta: mutable.Map[JoinNodeSpec, BetaMemory] = AnyRefMap.empty
+  val alpha: mutable.Map[TriplePattern, AlphaMemory] = mutable.AnyRefMap.empty
+  val beta: mutable.Map[JoinNodeSpec, BetaMemory] = mutable.AnyRefMap.empty
   beta += (BetaRoot.spec -> BetaRoot.memory)
 
   def explain(triple: Triple): Set[Explanation] = explainAll(Set(triple))
@@ -60,7 +59,7 @@ final class BetaMemory(val spec: JoinNodeSpec, initialLinkedChildren: List[BetaN
   var tokens: List[Token] = Nil
   var checkRightLink: Boolean = true
   var checkLeftLink: Boolean = false
-  val tokenIndex: mutable.Map[Variable, mutable.Map[ConcreteNode, List[Token]]] = AnyRefMap.empty
+  val tokenIndex: mutable.Map[Variable, mutable.Map[ConcreteNode, List[Token]]] = mutable.AnyRefMap.empty
   var linkedChildren: List[BetaNode] = initialLinkedChildren
 
 }
