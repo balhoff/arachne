@@ -70,6 +70,14 @@ final case class TriplePattern(s: Node, p: Node, o: Node) extends TripleLike {
 
   override val hashCode: Int = scala.util.hashing.MurmurHash3.productHash(this)
 
+  override def equals(that: Any): Boolean =
+    if (this.hashCode == that.hashCode) {
+      if (that.isInstanceOf[TriplePattern]) {
+        val thatTriple = that.asInstanceOf[TriplePattern]
+        this.eq(thatTriple) || ((this.o == thatTriple.o) && (this.s == thatTriple.s) && (this.p == thatTriple.p))
+      } else false
+    } else false
+
 }
 
 final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike {
@@ -78,7 +86,14 @@ final case class Triple(s: Resource, p: URI, o: ConcreteNode) extends TripleLike
 
 }
 
-final case class Rule(name: Option[String], body: List[TriplePattern], head: List[TriplePattern]) {
+/**
+ *
+ * @param name
+ * @param body
+ * @param head
+ * @param action an optional function to call when the rule is triggered. Provides a way to add arbitrary custom behaviors to the rule engine.
+ */
+final case class Rule(name: Option[String], body: List[TriplePattern], head: List[TriplePattern], action: Option[(Rule, Token, WorkingMemory) => Unit] = None) {
 
   override def toString: String = s"[${name.getOrElse("")} ${body.mkString(" ^ ")} -> ${head.mkString(" ^ ")} ]"
 

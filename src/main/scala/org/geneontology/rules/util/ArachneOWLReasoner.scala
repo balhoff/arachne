@@ -1,44 +1,19 @@
 package org.geneontology.rules.util
 
-import java.util.{ List => JList }
-import java.util.{ Set => JSet }
-import java.util.concurrent.atomic.AtomicBoolean
-
-import scala.collection.JavaConverters._
-
-import org.apache.jena.query.QueryExecutionFactory
-import org.apache.jena.query.QueryFactory
-import org.apache.jena.query.QuerySolution
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.query.{QueryExecutionFactory, QueryFactory, QuerySolution}
+import org.apache.jena.rdf.model.{Model, ModelFactory}
 import org.geneontology.jena.SesameJena.ontologyAsTriples
 import org.geneontology.rules.engine.RuleEngine
 import org.phenoscape.scowl._
 import org.semanticweb.owlapi.apibinding.OWLManager
-import org.semanticweb.owlapi.model.AxiomType
-import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.model.OWLAxiom
-import org.semanticweb.owlapi.model.OWLClass
-import org.semanticweb.owlapi.model.OWLClassExpression
-import org.semanticweb.owlapi.model.OWLDataProperty
-import org.semanticweb.owlapi.model.OWLDataPropertyExpression
-import org.semanticweb.owlapi.model.OWLLiteral
-import org.semanticweb.owlapi.model.OWLNamedIndividual
-import org.semanticweb.owlapi.model.OWLObjectPropertyExpression
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLOntologyChange
-import org.semanticweb.owlapi.model.OWLOntologyChangeListener
-import org.semanticweb.owlapi.reasoner.BufferingMode
-import org.semanticweb.owlapi.reasoner.FreshEntityPolicy
-import org.semanticweb.owlapi.reasoner.IndividualNodeSetPolicy
-import org.semanticweb.owlapi.reasoner.InferenceType
-import org.semanticweb.owlapi.reasoner.Node
-import org.semanticweb.owlapi.reasoner.NodeSet
-import org.semanticweb.owlapi.reasoner.OWLReasoner
-import org.semanticweb.owlapi.reasoner.impl.NodeFactory
-import org.semanticweb.owlapi.reasoner.impl.OWLClassNodeSet
-import org.semanticweb.owlapi.reasoner.impl.OWLNamedIndividualNodeSet
+import org.semanticweb.owlapi.model._
+import org.semanticweb.owlapi.reasoner._
+import org.semanticweb.owlapi.reasoner.impl.{NodeFactory, OWLClassNodeSet, OWLNamedIndividualNodeSet}
 import org.semanticweb.owlapi.util.Version
+
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.{List => JList, Set => JSet}
+import scala.jdk.CollectionConverters._
 
 /**
  * An OWLReasoner interface for Arachne. This is not a full-featured OWLReasoner implementation; it is only 
@@ -83,7 +58,8 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
   }
 
   override def getDifferentIndividuals(ind: OWLNamedIndividual): NodeSet[OWLNamedIndividual] = {
-    val query = s"""
+    val query =
+      s"""
       PREFIX owl: <http://www.w3.org/2002/07/owl#>
       SELECT DISTINCT ?o
       WHERE {
@@ -121,7 +97,7 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
       }
       val inds: Iterable[Node[OWLNamedIndividual]] = executeSelect(query).map(res => NodeFactory.getOWLNamedIndividualNode(Individual(res.getResource("s").getURI)))
       new OWLNamedIndividualNodeSet(inds.toSet.asJava)
-    case _ => ???
+    case _          => ???
   }
 
   override def getObjectPropertyValues(ind: OWLNamedIndividual, pe: OWLObjectPropertyExpression): NodeSet[OWLNamedIndividual] = {
@@ -129,7 +105,8 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
       case ObjectProperty(iri)                  => s"<$iri>"
       case ObjectInverseOf(ObjectProperty(iri)) => s"^<$iri>"
     }
-    val query = s"""
+    val query =
+      s"""
       SELECT DISTINCT ?o
       WHERE {
         <${ind.getIRI}> $predicate ?o .
@@ -142,7 +119,8 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
 
   override def getDataPropertyValues(ind: OWLNamedIndividual, dp: OWLDataProperty): JSet[OWLLiteral] = {
     val factory = OWLManager.getOWLDataFactory
-    val query = s"""
+    val query =
+      s"""
       SELECT DISTINCT ?o
       WHERE {
         <${ind.getIRI}> <${dp.getIRI}> ?o .
@@ -165,7 +143,8 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
   override def getRootOntology(): OWLOntology = ontology
 
   override def getSameIndividuals(ind: OWLNamedIndividual): Node[OWLNamedIndividual] = {
-    val query = s"""
+    val query =
+      s"""
       PREFIX owl: <http://www.w3.org/2002/07/owl#>
       SELECT DISTINCT ?o
       WHERE {
@@ -205,7 +184,7 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
       val classes: Iterable[Node[OWLClass]] = executeSelect(query).map(res => NodeFactory.getOWLClassNode(Class(res.getResource("s").getURI)))
       new OWLClassNodeSet(classes.toSet.asJava)
     }
-    case _ => ???
+    case _          => ???
   }
 
   override def getSubDataProperties(dp: OWLDataProperty, direct: Boolean): NodeSet[OWLDataProperty] = ???
@@ -240,7 +219,7 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
       val classes: Iterable[Node[OWLClass]] = executeSelect(query).map(res => NodeFactory.getOWLClassNode(Class(res.getResource("o").getURI)))
       new OWLClassNodeSet(classes.toSet.asJava)
     }
-    case _ => ???
+    case _          => ???
   }
 
   override def getSuperDataProperties(dp: OWLDataProperty, direct: Boolean): NodeSet[OWLDataProperty] = ???
@@ -299,7 +278,8 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
   override def interrupt(): Unit = ()
 
   override def isConsistent(): Boolean = {
-    val query = s"""
+    val query =
+      s"""
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
       PREFIX owl: <http://www.w3.org/2002/07/owl#>
       ASK
@@ -312,15 +292,16 @@ class ArachneOWLReasoner(ontology: OWLOntology, bufferingMode: BufferingMode, ar
 
   override def isEntailed(axiom: OWLAxiom): Boolean = {
     val pattern = axiom match {
-      case ClassAssertion(_, Class(cls), NamedIndividual(ind)) =>
+      case ClassAssertion(_, Class(cls), NamedIndividual(ind))                                                            =>
         s"<$ind> rdf:type <$cls> ."
-      case ObjectPropertyAssertion(_, ObjectProperty(pred), NamedIndividual(subj), NamedIndividual(obj)) =>
+      case ObjectPropertyAssertion(_, ObjectProperty(pred), NamedIndividual(subj), NamedIndividual(obj))                  =>
         s"<$subj> <$pred> <$obj> ."
       case ObjectPropertyAssertion(_, ObjectInverseOf(ObjectProperty(pred)), NamedIndividual(subj), NamedIndividual(obj)) =>
         s"<$subj> ^<$pred> <$obj> ."
-      case _ => ???
+      case _                                                                                                              => ???
     }
-    val query = s"""
+    val query =
+      s"""
       PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>      
       PREFIX owl: <http://www.w3.org/2002/07/owl#>      
       ASK 

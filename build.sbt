@@ -4,7 +4,7 @@ organization  := "org.geneontology"
 
 name          := "arachne"
 
-version       := "1.2.1"
+version       := "1.3"
 
 publishMavenStyle := true
 
@@ -22,9 +22,9 @@ licenses := Seq("BSD-3-Clause" -> url("https://opensource.org/licenses/BSD-3-Cla
 
 homepage := Some(url("https://github.com/balhoff/arachne"))
 
-//scalaVersion  := "2.13.6"
+scalaVersion  := "2.13.10"
 
-crossScalaVersions := Seq("2.12.15", "2.13.6")
+//crossScalaVersions := Seq("2.12.15", "2.13.6")
 
 scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 
@@ -38,14 +38,14 @@ fork in Test := true
 
 libraryDependencies ++= {
   Seq(
-    "org.scalaz"                  %% "scalaz-core"            % "7.3.5",
+    "org.scalaz"                  %% "scalaz-core"            % "7.3.7",
     "org.apache.jena"             %  "apache-jena-libs"       % "3.17.0" pomOnly(),
-    "org.geneontology"            %% "owl-to-rules"           % "0.3.7",
+    "org.geneontology"            %% "owl-to-rules"           % "0.3.8",
     "net.sourceforge.owlapi"      %  "owlapi-distribution"    % "4.5.15",
     "org.backuity.clist"          %% "clist-core"             % "3.5.1",
     "org.backuity.clist"          %% "clist-macros"           % "3.5.1" % "provided",
     "com.outr"                    %% "scribe-slf4j"           % "2.8.3",
-    "org.scalatest"               %% "scalatest"              % "3.2.10" % Test
+    "org.scalatest"               %% "scalatest"              % "3.2.14" % Test
   )
 }
 
